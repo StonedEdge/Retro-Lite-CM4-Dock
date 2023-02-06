@@ -17,6 +17,7 @@
 // extern uint8_t buffer[OLED_BUF_SIZE];
 
 #define sleep_time 16
+unsigned int ms_start, ms_stop, ms_elapsed;
 
 int main(void){
 
@@ -45,8 +46,6 @@ int main(void){
   channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
   channel_config_set_dreq(&c, spi_get_dreq(SPI_PORT, true));
 
-
-
 while(1) {
   for (int i = 0; i < FRAME_COUNT; i++) {
     SSD1351_write_command(SSD1351_CMD_WRITERAM);
@@ -61,11 +60,18 @@ while(1) {
         OLED_BUF_SIZE,             // element count (each element is of size transfer_data_size)
         true                       // start
     );
-    dma_channel_wait_for_finish_blocking(dma_tx); 
-    sleep_ms(sleep_time);
+    //  DMA set up done above in ...
+    ms_start = time_us_32() / 1000;
+    dma_channel_wait_for_finish_blocking(dma_tx);
+    ms_stop = time_us_32() / 1000;
+    ms_elapsed = ms_stop - ms_start;
+    
+    // integer division is used, if more precision is required you can use doubles and time_us_64
+    if(sleep_time > ms_elapsed) sleep_ms(sleep_time - ms_elapsed);
+      sleep_ms(sleep_time);
   } 
-
 }
-
+  
 return 0;
+  
 }
