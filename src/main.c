@@ -16,7 +16,7 @@
 
 // extern uint8_t buffer[OLED_BUF_SIZE];
 
-#define sleep_time 330
+#define sleep_time 16
 
 int main(void){
 
@@ -42,15 +42,17 @@ int main(void){
   // DMA Initialisation
   const uint dma_tx = dma_claim_unused_channel(true);
   dma_channel_config c = dma_channel_get_default_config(dma_tx);
+  channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+  channel_config_set_dreq(&c, spi_get_dreq(SPI_PORT, true));
+
+
 
 while(1) {
-
   for (int i = 0; i < FRAME_COUNT; i++) {
     SSD1351_write_command(SSD1351_CMD_WRITERAM);
     // DMA Data Transfer
     gpio_put(DC, 1);
-    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
-    channel_config_set_dreq(&c, spi_get_dreq(SPI_PORT, true));
+    
     dma_channel_configure(
         dma_tx, 
         &c,
@@ -59,7 +61,8 @@ while(1) {
         OLED_BUF_SIZE,             // element count (each element is of size transfer_data_size)
         true                       // start
     );
-     sleep_ms(sleep_time);
+    dma_channel_wait_for_finish_blocking(dma_tx); 
+    sleep_ms(sleep_time);
   } 
 
 }
