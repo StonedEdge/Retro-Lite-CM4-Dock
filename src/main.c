@@ -17,7 +17,8 @@
 // extern uint8_t buffer[OLED_BUF_SIZE];
 
 #define sleep_time 16
-unsigned int ms_start, ms_stop, ms_elapsed;
+clock_t start, end;
+double cpu_time_used;
 
 int main(void){
 
@@ -60,18 +61,18 @@ while(1) {
         OLED_BUF_SIZE,             // element count (each element is of size transfer_data_size)
         true                       // start
     );
-    //  DMA set up done above in ...
-    ms_start = time_us_32() / 1000;
+
+    start = clock();
     dma_channel_wait_for_finish_blocking(dma_tx);
-    ms_stop = time_us_32() / 1000;
-    ms_elapsed = ms_stop - ms_start;
+    end  = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC; 
     
-    // integer division is used, if more precision is required you can use doubles and time_us_64
-    if(sleep_time > ms_elapsed) sleep_ms(sleep_time - ms_elapsed);
-      sleep_ms(sleep_time);
+    // Integer division is used, if more precision is required you can use time_us_64 if mem permits
+    sleep_ms( cpu_time_used - sleep_time );
   } 
 }
   
 return 0;
   
 }
+
