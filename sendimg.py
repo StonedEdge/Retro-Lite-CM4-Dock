@@ -218,24 +218,24 @@ def main():
         temp = "{:.2f} C\n".format(temp)
  
     # Clock Speed
-    with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "r") as clock_file:
-        clock_speed = float(clock_file.read().strip()) / 1000
-    clock_speed_data = "{:.0f} MHz\n".format(clock_speed)
+        with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "r") as clock_file:
+            clock_speed = float(clock_file.read().strip()) / 1000
+        clock_speed_data = "{:.0f} MHz\n".format(clock_speed)
     
     # RAM Usage
-    mem = psutil.virtual_memory()
-    ram_usage = mem.percent
-    ram_percent = "{:.0f} \n".format(ram_usage)
+        mem = psutil.virtual_memory()
+        ram_usage = mem.percent
+        ram_percent = "{:.0f} \n".format(ram_usage)
 
     # IP Address
-    host_name = os.popen("hostname -I").read()
-    ip_address = host_name
+        host_name = os.popen("hostname -I").read()
+        ip_address = host_name
 
-    ser.write("A" + disk_data.encode())
-    ser.write("B" + temp.encode())
-    ser.write("C" + clock_speed_data.encode())
-    ser.write("D" + ram_percent.encode())
-    ser.write("E" + ip_address.encode())
+        ser.write("A" + disk_data.encode())
+        ser.write("B" + temp.encode())
+        ser.write("C" + clock_speed_data.encode())
+        ser.write("D" + ram_percent.encode())
+        ser.write("E" + ip_address.encode())
 
 if __name__=="__main__":
   main()
