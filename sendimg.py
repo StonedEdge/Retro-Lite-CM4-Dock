@@ -39,26 +39,6 @@ def pico_com_port():
             pico_port = None
             print("Raspberry Pi Pico failed to open serial port. Please check VID and PID IDs are correct.")
 
-def get_cpu_temp():
-    tempFile = open("/sys/class/thermal/thermal_zone0/temp")
-    cpu_temp = tempFile.read()
-    tempFile.close()
-    return float(cpu_temp)/1000
-
-def get_cpu_speed():
-    tempFile = open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
-    cpu_speed = tempFile.read()
-    tempFile.close()
-    return float(cpu_speed)/1000
-
-def get_ip_address(cmd, cmdeth):
-    ipaddr = run_cmd(cmd)
-
-    count = len(ipaddr)
-    if count == 0 :
-        ipaddr = run_cmd(cmdeth)
-    return ipaddr
-
 def get_img_directories():
     global wheel, screenshot, boxart
     tempFile = open('/tmp/retropie_oled.log', 'r', -1, "utf-8")
@@ -210,10 +190,10 @@ def main():
                 rgb = 0
 
     binoutfile.close()
+    pico_com_port()
 
     if raspberryPi:
         data = open("out.bin","rb")
-        pico_com_port()
         ser = serial.Serial(pico_port, 921600)
         ser.write(data.read())  
         data.close()
@@ -222,6 +202,40 @@ def main():
         data = open("out.bin","rb")
         ser.write(data.read())  
         data.close()
+        
+    while True:
+    # SD Usage
+        sd_stat = os.statvfs("/")
+        total = sd_stat.f_frsize * sd_stat.f_blocks
+        used = (sd_stat.f_frsize * (sd_stat.f_blocks - sd_stat.f_bfree))
+        disk_data = "{:.0f} \n".format((used / total) * 100)
+#       disk_data = "{:.0f} \n".format(used * os.statvfs("/").f_frsize / (1024 *1024))
+    
+    # CPU Temperature
+        with open('/sys/class/thermal/thermal_zone0/temp', 'r') as temp_file:
+            temp = temp_file.readline()
+            temp = float(temp.strip()) / 1000
+        temp = "{:.2f} C\n".format(temp)
+ 
+    # Clock Speed
+    with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "r") as clock_file:
+        clock_speed = float(clock_file.read().strip()) / 1000
+    clock_speed_data = "{:.0f} MHz\n".format(clock_speed)
+    
+    # RAM Usage
+    mem = psutil.virtual_memory()
+    ram_usage = mem.percent
+    ram_percent = "{:.0f} \n".format(ram_usage)
+
+    # IP Address
+    host_name = os.popen("hostname -I").read()
+    ip_address = host_name
+
+    ser.write("A" + disk_data.encode())
+    ser.write("B" + temp.encode())
+    ser.write("C" + clock_speed_data.encode())
+    ser.write("D" + ram_percent.encode())
+    ser.write("E" + ip_address.encode())
 
 if __name__=="__main__":
   main()
