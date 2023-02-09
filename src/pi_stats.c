@@ -1,13 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <math.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/gpio.h"
 #include "hardware/dma.h"
