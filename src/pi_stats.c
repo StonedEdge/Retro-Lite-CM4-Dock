@@ -97,17 +97,24 @@ while (1) {
   // 3) Immediately update values on OLED
   SSD1351_set_cursor(5, 5);
   SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "SD Usage");
-
   SSD1351_set_cursor(5, 15);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, SD_usage);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, SD_usage);//, " %");
+  SSD1351_set_cursor(5, 30);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "SoC Temp");
   SSD1351_set_cursor(5, 40);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, CPU_temp);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, CPU_temp, "C");//, " C");
+  SSD1351_set_cursor(5, 55);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "Clock Speed");
   SSD1351_set_cursor(5, 65);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, CLK_speed);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, CLK_speed);//, " MHZ");
+  SSD1351_set_cursor(5, 80);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "RAM Usage");
   SSD1351_set_cursor(5, 90);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, RAM_usage);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, RAM_usage);//, "%");
+  SSD1351_set_cursor(5, 105);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "IP Address");
   SSD1351_set_cursor(5, 115);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, IP_addr);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, IP_addr);
 
   SSD1351_update();
 
