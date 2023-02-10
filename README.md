@@ -27,15 +27,14 @@ Modes currently planned are:
 
 - Console communicates to Pico over USB
 - Shows disk usage, SoC temp, clock speed, RAM usage & IP address of the console
-- Shows game metadata of the game/system booted, including:
-
-      - Current game cover (boxart) 
-      - Screenshot + combined wheel image
-      - Game description using vertical scrolling 
-      - Game developer 
-      - Release date
-      - Video of game,
-
+- Shows game metadata of the game/system booted, **including:**
+- Current game cover (boxart) - /opt/retropie/configs/all/emulationstation/downloaded_images/{system}/{rom_name}.png
+- Screenshot + combined wheel image - /home/pi/retropie/roms/{system}/media/wheel/{rom_name}.png && /home/pi/retropie/roms/{system}/media/screenshot/{rom_name}.png
+- Randomized vector images of console released - /home/pi/pico/pico-examples/pico-spi/consolevectors
+- Game description using vertical scrolling - /opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml'
+- Game developer - /opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml'
+- Release date - /opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml'
+- Videos - /home/pi/retropie/roms/{system}/media/videos/{rom_name}.mp4
 - Shows top 3 games played overall on the system, when a game is not running based on langest RetroStats: https://github.com/langest/RetroStats
 - Shows top 3 games played based on system launched, including duration of time played, based on langest RetroStats: https://github.com/langest/RetroStats
 
