@@ -32,5 +32,5 @@ Modes currently planned are:
 - Shows battery statistics, including time-to-full, % SoC (WIP)
 - Integrated sleep + wake mode, blanking after 1-min of no user input 
 - 3 USB 2.0 ports for peripherals such as a keyboard, USB mouse 
-- Writte in C/Python 
-- Uses a RP2040 Pico microcontroller 
+- Written in C (Pico) & Python (CM4)
+- Uses a RP2040 Pico microcontroller as the brains
