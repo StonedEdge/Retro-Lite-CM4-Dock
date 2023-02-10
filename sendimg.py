@@ -12,11 +12,13 @@ import serial
 import linecache
 import xml.etree.ElementTree as et
 import xml.sax.saxutils as saxutils
-
 import cv2
 from PIL import Image
 from PIL import ImageDraw
 from datetime import datetime
+import time
+import psutil
+import socket
 
 # Host selection (for debugging)
 raspberryPi = 0
@@ -203,39 +205,42 @@ def main():
         ser.write(data.read())  
         data.close()
         
+
+
     while True:
     # SD Usage
         sd_stat = os.statvfs("/")
-        total = sd_stat.f_frsize * sd_stat.f_blocks
-        used = (sd_stat.f_frsize * (sd_stat.f_blocks - sd_stat.f_bfree))
-        disk_data = "{:.0f} \n".format((used / total) * 100)
-#       disk_data = "{:.0f} \n".format(used * os.statvfs("/").f_frsize / (1024 *1024))
-    
+        total = sd_stat.f_frsize * sd_stat.f_blocks / (1024 * 1024 * 1024)
+        used = (sd_stat.f_frsize * (sd_stat.f_blocks - sd_stat.f_bfree)) / (1024 * 1024 * 1024)
+        disk_data = "{:.0f}/{:.0f}GB {:.0f}% used\n".format(used, total, (used / total) * 100)
+
     # CPU Temperature
         with open('/sys/class/thermal/thermal_zone0/temp', 'r') as temp_file:
             temp = temp_file.readline()
             temp = float(temp.strip()) / 1000
-        temp = "{:.2f} C\n".format(temp)
- 
+        cpu_temp = "{:.1f}C\n".format(temp)
+
     # Clock Speed
         with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "r") as clock_file:
             clock_speed = float(clock_file.read().strip()) / 1000
-        clock_speed_data = "{:.0f} MHz\n".format(clock_speed)
-    
+        clock_speed_data = "{:.0f}MHz\n".format(clock_speed)
+
     # RAM Usage
         mem = psutil.virtual_memory()
         ram_usage = mem.percent
-        ram_percent = "{:.0f} \n".format(ram_usage)
+        total_ram = mem.total / (1024 * 1024 * 1024)
+        used_ram = mem.used / (1024 * 1024 * 1024)
+        ram_data = "{:.1f}/{:.1f}GB {:.1f}% used\n".format(used_ram, total_ram, ram_usage)
 
     # IP Address
         host_name = os.popen("hostname -I").read()
         ip_address = host_name
 
-        ser.write("A" + disk_data.encode())
-        ser.write("B" + temp.encode())
-        ser.write("C" + clock_speed_data.encode())
-        ser.write("D" + ram_percent.encode())
-        ser.write("E" + ip_address.encode())
+        ser.write(b"A" + disk_data.encode('utf-8'))
+        ser.write(b"B" + cpu_temp.encode('utf-8'))
+        ser.write(b"C" + clock_speed_data.encode('utf-8'))
+        ser.write(b"D" + ram_data.encode('utf-8'))
+        ser.write(b"E" + ip_address.encode('utf-8'))
 
 if __name__=="__main__":
   main()
