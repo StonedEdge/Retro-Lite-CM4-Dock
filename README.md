@@ -67,7 +67,7 @@ Other:
 - [x] Downscale + convert screenshot and wheel images to 128x128 RGB565 on Pi 4 (Python)
 - [x] Detect RP2040 by Product/Vendor IDs (VID/PIDs) 
 - [ ] Identify how to perform hardware scrolling of text on the SSD1351 for game descriptions 
-- [ ] Identify how extract game text metadata using Python 
+- [ ] Identify how extract game description metadata using Python 
 - [x] Send system stats to RP2040 over USB 
 - [ ] Implement mode toggles 
 - [ ] Implement a 1 min timeout which fades black to the OLED with no user input, wake up OLED on button press (Nice to have)
