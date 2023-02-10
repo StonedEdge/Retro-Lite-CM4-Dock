@@ -26,6 +26,37 @@ pc = 1
 
 enable_boxart = 0
 
+def get_game_metadata():
+    tempFile = open('/tmp/retropie_oled.log', 'r', -1, "utf-8")
+    gamemetadata = tempFile.readlines()
+    tempFile.close()
+    game_name = gamemetadata[0].split('/')[-1].rsplit('.',1)[0].split('(')[0].rstrip() # Get the current game name
+    system_name = gamemetadata[0].split('/')[5] # Get the current system name
+    gamelist_path = os.path.join('/opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml')
+    data = et.parse(gamelist_path)
+    
+    # Find all the games with matching names within gamelist_path
+    game_list = data.findall(u".//game[name='{0}']".format(saxutils.escape(game_name)))
+    
+    for game in game_list:
+        if game.find('desc') is not None:
+            desc = str('Description is :\n' + game.find('desc').text)
+            
+        if game.find('') is not None:
+            rating = str('Rating:\n' + game.find('rating').text)
+            
+        if game.find('releasedate') is not None:
+            release_date = str ('Release Date:\n' + game.find('releasedate').text)
+            
+        if game.find('developer') is not None: 
+            developer = str ('Developer:\n' + game.find('developer').text)
+            
+        if game.find('publisher') is not None: 
+            publsiher = str ('Publisher:\n' + game.find('releasedate').text)
+            
+        if game.find('genre') is not None: 
+            genre = str ('Genre:\n' + game.find('genre').text)
+
 def pico_com_port():
     global pico_port
     picoVID = "2E8A" # Raspberry Pi Pico USB vendor ID
