@@ -28,12 +28,14 @@ Modes currently planned are:
 - Console communicates to Pico over USB
 - Shows disk usage, SoC temp, clock speed, RAM usage & IP address of the console
 - Shows game metadata of the game/system booted, including:
+
       - Current game cover (boxart) 
       - Screenshot + combined wheel image
       - Game description using vertical scrolling 
       - Game developer 
       - Release date
       - Video of game,
+
 - Shows top 3 games played overall on the system, when a game is not running based on langest RetroStats: https://github.com/langest/RetroStats
 - Shows top 3 games played based on system launched, including duration of time played, based on langest RetroStats: https://github.com/langest/RetroStats
 
