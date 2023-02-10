@@ -5,6 +5,7 @@
 
 # Description 
 A basic docking station designed to be used with the Retro Lite CM4 gaming console. The main features of this project include:
+Note: Currently the code is a WIP and the project isn't completed yet so you won't be able to compile the program right now. 
 
 - Fully integrated 1.5" 128x128 SPI driven 16-bit color display 
 - User configurable splashscreen on power boot
