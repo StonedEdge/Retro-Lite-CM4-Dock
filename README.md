@@ -23,8 +23,17 @@ Modes currently planned are:
 4) Game metadata on boot (text)
 5) Game statistics (play time)
 
-- Shows disk usage, SoC temp, clock speed, RAM usage & IP address of the console 
-- Shows game metadata of the game/system booted, including current game cover (boxart), screenshot + combined wheel image, game description using vertical scrolling, developer, release date, short video of game, etc, togglable with push button
+# Features
+
+- Console communicates to Pico over USB
+- Shows disk usage, SoC temp, clock speed, RAM usage & IP address of the console
+- Shows game metadata of the game/system booted, including:
+      - Current game cover (boxart) 
+      - Screenshot + combined wheel image
+      - Game description using vertical scrolling 
+      - Game developer 
+      - Release date
+      - Video of game,
 - Shows top 3 games played overall on the system, when a game is not running based on langest RetroStats: https://github.com/langest/RetroStats
 - Shows top 3 games played based on system launched, including duration of time played, based on langest RetroStats: https://github.com/langest/RetroStats
 
@@ -32,8 +41,8 @@ Modes currently planned are:
                 Crash Team Racing ▏ 2:01:08 ██████
                    Super Mario 64 ▏ 1:59:56 ██████
 
-- Shows battery statistics, including time-to-full, % SoC (WIP)
+- Shows battery statistics, including time-to-full, % SoC from connected MAX17055 gauge
 - Integrated sleep + wake mode, blanking after 1-min of no user input 
 - 3 USB 2.0 ports for peripherals such as a keyboard, USB mouse 
 - Written in C (Pico) & Python (CM4)
-- Uses a RP2040 Pico microcontroller as the brains
+- Uses a RP2040 Pico microcontroller
