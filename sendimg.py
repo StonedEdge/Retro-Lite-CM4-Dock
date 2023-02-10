@@ -205,8 +205,6 @@ def main():
         ser.write(data.read())  
         data.close()
         
-
-
     while True:
     # SD Usage
         sd_stat = os.statvfs("/")
