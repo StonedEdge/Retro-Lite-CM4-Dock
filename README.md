@@ -28,7 +28,7 @@ Modes currently planned are:
                      Wario Land 3 ▏ 6:36:28 ████████████████████
                 Crash Team Racing ▏ 2:01:08 ██████
                    Super Mario 64 ▏ 1:59:56 ██████
--
+
 - Shows battery statistics, including time-to-full, % SoC (WIP)
 - Integrated sleep + wake mode, blanking after 1-min of no user input 
 - 3 USB 2.0 ports for peripherals such as a keyboard, USB mouse 
