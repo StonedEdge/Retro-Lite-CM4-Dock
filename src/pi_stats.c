@@ -54,6 +54,13 @@ int main(void){
   char RAM_usage[1024];     // D
   char IP_addr[1024];       // E
 
+  // Old repeated values 
+  char old_SD_usage[1024];
+  char old_CPU_temp[1024];
+  char old_CLK_speed[1024];
+  char old_RAM_usage[1024];
+  char old_IP_addr[1024];
+
 while (1) {
   // 1) Get new values
   int i = 0;
@@ -82,19 +89,26 @@ while (1) {
     }
   }
 
-  // 2) Clear values on OLED
+  // 3) Clear values on OLED
   SSD1351_set_cursor(5, 15);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, SD_usage);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_SD_usage);
   SSD1351_set_cursor(5, 40);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, CPU_temp);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_CPU_temp);
   SSD1351_set_cursor(5, 65);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, CLK_speed);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_CLK_speed);
   SSD1351_set_cursor(5, 90);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, RAM_usage);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_RAM_usage);
   SSD1351_set_cursor(5, 115);
-  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, IP_addr);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_IP_addr);
 
-  // 3) Immediately update values on OLED
+  // 2) Store new values in old values
+  strncpy(old_SD_usage, SD_usage, strlen(SD_usage));
+  strncpy(old_CPU_temp, CPU_temp, strlen(CPU_temp));
+  strncpy(old_CLK_speed, CLK_speed, strlen(CLK_speed));
+  strncpy(old_RAM_usage, RAM_usage, strlen(RAM_usage));
+  strncpy(old_IP_addr, IP_addr, strlen(IP_addr));
+
+  // 4) Immediately update values on OLED
   SSD1351_set_cursor(5, 5);
   SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "SD Usage");
   SSD1351_set_cursor(5, 15);
@@ -119,6 +133,7 @@ while (1) {
   SSD1351_update();
 
   sleep_ms(5000);
-  
+  }
+
   return 0;
 }
