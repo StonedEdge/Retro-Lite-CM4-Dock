@@ -45,6 +45,7 @@ f) **Release date** - /opt/retropie/configs/all/emulationstation/gamelists', sys
 g) **Videos** - /home/pi/retropie/roms/{system}/media/videos/{rom_name}.mp4
 
 h) Shows top 3 games played overall on the system, when a game is not running based on langest RetroStats: https://github.com/langest/RetroStats
+
 i) Shows top 3 games played based on system launched, including duration of time played, based on langest RetroStats: https://github.com/langest/RetroStats
 
                      Wario Land 3 ▏ 6:36:28 ████████████████████
