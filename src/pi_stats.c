@@ -10,23 +10,10 @@
 int main(void){
 
   // GPIO Set-Up
-  spi_set_format(SPI_PORT, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
-  gpio_init(CS);
-  gpio_set_dir(CS, GPIO_OUT);
-  gpio_put(CS, 1);
-  gpio_set_function (SCK, GPIO_FUNC_SPI);
-  gpio_set_function (MOSI, GPIO_FUNC_SPI);
-  gpio_pull_up(SCK);
-  gpio_pull_up(MOSI);
-  gpio_init(DC);
-  gpio_set_dir(DC,GPIO_OUT);
-  gpio_init(RST);
-  gpio_set_dir(RST,GPIO_OUT);
+  setup_gpio(); 
 
   // SPI Initialisation
-  stdio_init_all(); 
-  spi_init(SPI_PORT, 10000000);
-  SSD1351_init();
+  setup_spi(); 
 
   // Initialise display
   SSD1351_clear();
