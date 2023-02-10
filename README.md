@@ -1,6 +1,6 @@
 # Retro-Lite-CM4-Dock
 <p align="center">
-   <img src="https://i.imgur.com/RhksMgQ.jpg"/>
+   <img src="https://i.imgur.com/RhksMgQ.jpg" width = 50% height = 50%/>
 </p>
 
 # Description 
