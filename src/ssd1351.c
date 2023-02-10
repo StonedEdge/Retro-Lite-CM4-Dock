@@ -148,3 +148,75 @@ void transfer_data_with_dma(const uint dma_tx, const uint8_t *frame) {
       OLED_BUF_SIZE,             // element count (each element is of size transfer_data_size)
       true                       // start
   );
+
+ void getOLEDvalues (void) {
+  int i = 0;
+  while (i < 5) {
+    scanf("%1024s", buffer);
+
+    if (buffer[0] == 'A') {
+      strncpy(SD_usage, buffer + 1, strlen(buffer));
+      sleep_ms(1);
+      i++;
+    } else if (buffer[0] == 'B') {
+      strncpy(CPU_temp, buffer + 1, strlen(buffer));
+      sleep_ms(1);
+      i++;
+    } else if (buffer[0] == 'C') {
+      strncpy(CLK_speed, buffer + 1, strlen(buffer));
+      sleep_ms(1);
+      i++;
+    } else if (buffer[0] == 'D') {
+      strncpy(RAM_usage, buffer + 1, strlen(buffer));
+      sleep_ms(1);
+      i++;
+    } else if (buffer[0] == 'E') {
+      strncpy(IP_addr, buffer + 1, strlen(buffer));
+      sleep_ms(1);
+    }
+  }
+}
+ 
+  void clearOLEDvalues(void) {
+  SSD1351_set_cursor(5, 15);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_SD_usage);
+  SSD1351_set_cursor(5, 40);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_CPU_temp);
+  SSD1351_set_cursor(5, 65);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_CLK_speed);
+  SSD1351_set_cursor(5, 90);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_RAM_usage);
+  SSD1351_set_cursor(5, 115);
+  SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, old_IP_addr);
+  }
+   
+  void storeNewvalues(void) { 
+  strncpy(old_SD_usage, SD_usage, strlen(SD_usage));
+  strncpy(old_CPU_temp, CPU_temp, strlen(CPU_temp));
+  strncpy(old_CLK_speed, CLK_speed, strlen(CLK_speed));
+  strncpy(old_RAM_usage, RAM_usage, strlen(RAM_usage));
+  strncpy(old_IP_addr, IP_addr, strlen(IP_addr));
+  }
+     
+  void updateNewvalues(void) { 
+  SSD1351_set_cursor(5, 5);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "SD Usage");
+  SSD1351_set_cursor(5, 15);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, SD_usage);//, " %");
+  SSD1351_set_cursor(5, 30);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "SoC Temp");
+  SSD1351_set_cursor(5, 40);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, CPU_temp, "C");//, " C");
+  SSD1351_set_cursor(5, 55);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "Clock Speed");
+  SSD1351_set_cursor(5, 65);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, CLK_speed);//, " MHZ");
+  SSD1351_set_cursor(5, 80);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "RAM Usage");
+  SSD1351_set_cursor(5, 90);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, RAM_usage);//, "%");
+  SSD1351_set_cursor(5, 105);
+  SSD1351_printf(SSD1351_get_rgb(r, g, b), small_font, "IP Address");
+  SSD1351_set_cursor(5, 115);
+  SSD1351_printf(SSD1351_get_rgb(r1, g1, b1), small_font, IP_addr);
+  }
