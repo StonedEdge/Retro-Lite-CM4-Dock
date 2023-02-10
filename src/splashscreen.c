@@ -20,45 +20,6 @@
 clock_t start, end;
 double cpu_time_used;
 
-void setup_gpio(void) {
-  gpio_init(CS);
-  gpio_set_dir(CS, GPIO_OUT);
-  gpio_put(CS, 1);
-  gpio_set_function(SCK, GPIO_FUNC_SPI);
-  gpio_set_function(MOSI, GPIO_FUNC_SPI);
-  gpio_pull_up(SCK);
-  gpio_pull_up(MOSI);
-  gpio_init(DC);
-  gpio_set_dir(DC, GPIO_OUT);
-  gpio_init(RST);
-  gpio_set_dir(RST, GPIO_OUT);
-}
-
-void setup_spi(void) {
-  spi_set_format(SPI_PORT, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
-  stdio_init_all(); 
-  spi_init(SPI_PORT, 10000000);
-}
-
-void setup_dma(const uint dma_tx) {
-  dma_channel_config c = dma_channel_get_default_config(dma_tx);
-  channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
-  channel_config_set_dreq(&c, spi_get_dreq(SPI_PORT, true));
-}
-
-void transfer_data_with_dma(const uint dma_tx, const uint8_t *frame) {
-  SSD1351_write_command(SSD1351_CMD_WRITERAM);
-  gpio_put(DC, 1);
-
-  dma_channel_configure(
-      dma_tx,
-      &c,
-      &spi_get_hw(SPI_PORT)->dr, // write address
-      frame,                    // read address
-      OLED_BUF_SIZE,             // element count (each element is of size transfer_data_size)
-      true                       // start
-  );
-
 int main(void){
 
   // GPIO Set-Up
