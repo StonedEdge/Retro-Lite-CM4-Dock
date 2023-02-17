@@ -107,7 +107,7 @@ def get_game_metadata():
             developer = str ('Developer:\n' + game.find('developer').text)
             
         if game.find('publisher') is not None: 
-            publsiher = str ('Publisher:\n' + game.find('releasedate').text)
+            publsiher = str ('Publisher:\n' + game.find('publisher').text)
             
         if game.find('genre') is not None: 
             genre = str ('Genre:\n' + game.find('genre').text)
