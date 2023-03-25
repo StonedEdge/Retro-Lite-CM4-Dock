@@ -46,11 +46,18 @@ g) **Videos** - /home/pi/retropie/roms/{system}/media/videos/{rom_name}.mp4
 
 h) Shows top 3 games played overall on the system, when a game is not running based on langest RetroStats: https://github.com/langest/RetroStats
 
-                     Wario Land 3 ▏3 ████████████████████
-                Crash Team Racing ▏2 ██████
-                   Super Mario 64 ▏1 ██████
+Example command: -c total -b 20 -n 3 -c times
+"Get the total time (in hours, mins, seconds) played and display it in a bar chart of 20 steps. Get only the top 3 systems. Display times played as an integer"
+ 
+                            
+                     Wario Land 3 ▏ 3 ████████████████████
+                Crash Team Racing ▏ 2 ██████
+                   Super Mario 64 ▏ 1 ██████
 
 i) Shows top 3 games played based on system launched, including duration of time played, based on langest RetroStats: https://github.com/langest/RetroStats
+
+Example command: -c total -b 20 -n 3 -e kodi
+"Get the total time (in hours, mins, seconds) played and display it in a bar chart of 20 steps. Get only the top 3 systems, exlcuding Kodi"
 
                      Wario Land 3 ▏ 6:36:28 ████████████████████
                 Crash Team Racing ▏ 2:01:08 ██████
