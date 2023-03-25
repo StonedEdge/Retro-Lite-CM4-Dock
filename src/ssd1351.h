@@ -18,6 +18,7 @@
 #define MOSI  3
 #define RST   4
 #define DC    5
+#define BUTTON 6
 
 #define SPI_PORT spi0
 
