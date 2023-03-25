@@ -13,12 +13,12 @@
 #include "hardware/spi.h"
 #include "fonts.h"
 
-#define CS    1
-#define SCK   2
-#define MOSI  3
-#define RST   4
-#define DC    5
-#define BUTTON 6
+#define CS     1
+#define SCK    2
+#define MOSI   3
+#define RST    4
+#define DC     5
+#define BTN    6
 
 #define SPI_PORT spi0
 
