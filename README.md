@@ -50,6 +50,7 @@ Example command:
 ```-c total -b 20 -n 3 -c times```
 
 Translation:
+
 "Get the total time (in hours, mins, seconds) played and display it in a bar chart of 20 steps. Get only the top 3 systems. Display times played as an integer"
  
                             
@@ -63,6 +64,7 @@ Example command:
 ```-c total -b 20 -n 3 -e kodi```
 
 Translation:
+
 "Get the total time (in hours, mins, seconds) played and display it in a bar chart of 20 steps. Get only the top 3 systems, exlcuding Kodi"
 
                      Wario Land 3 ▏ 6:36:28 ████████████████████
