@@ -70,6 +70,7 @@ Other:
 - [ ] Clear buffer when runcommand-onend.sh is executed when a game is closed, bringing back user to Pi stats view
 - [ ] Implement mode toggles 
 - [ ] Identify how to perform hardware scrolling of text on the SSD1351 for game descriptions
+- [ ] Implement "retrostats" mode
 - [ ] Stop splashscreen on COM port detect and switch to stats mode
 - [ ] Implement a 1 min timeout which fades black to the OLED with no user input, wake up OLED on button press (Nice to have)
 - [ ] Implement battery stats (Nice to have) 
