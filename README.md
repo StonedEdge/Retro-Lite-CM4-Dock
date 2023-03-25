@@ -57,15 +57,13 @@ i) Shows top 3 games played based on system launched, including duration of time
                    Super Mario 64 ▏ 1:59:56 ██████
 
 Arguments to use to show what you want on the OLED display. Can be adjusted by the user here: 
-
+```
 $ retro-stats-cli -h
 usage: retro-stats-cli [-h] [-n LIST_LENGTH] [-f FILE] [-c CRITERIA]
                        [-m MINIMUM_SESSION_LENGTH] [-s SYSTEMS [SYSTEMS ...]]
                        [-e EXCLUDE_SYSTEMS [EXCLUDE_SYSTEMS ...]]
                        [-l LOOKBACK] [-w | -b BAR_CHART | -r]
-
-Calculate some play statistics for your retro gaming
-
+                       
 optional arguments:
   -h, --help            show this help message and exit
   -n LIST_LENGTH, --list-length LIST_LENGTH
@@ -95,7 +93,7 @@ optional arguments:
                         length
   -r, --recently_played
                         print your game history
-
+```
 j) Shows battery statistics, including time-to-full, % SoC from connected MAX17055 gauge
 
 Other:
