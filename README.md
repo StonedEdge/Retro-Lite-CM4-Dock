@@ -46,7 +46,10 @@ g) **Videos** - /home/pi/retropie/roms/{system}/media/videos/{rom_name}.mp4
 
 h) Shows top 3 games played overall on the system, when a game is not running based on langest RetroStats: https://github.com/langest/RetroStats
 
-Example command: -c total -b 20 -n 3 -c times
+Example command: 
+```-c total -b 20 -n 3 -c times```
+
+Translation:
 "Get the total time (in hours, mins, seconds) played and display it in a bar chart of 20 steps. Get only the top 3 systems. Display times played as an integer"
  
                             
@@ -56,7 +59,10 @@ Example command: -c total -b 20 -n 3 -c times
 
 i) Shows top 3 games played based on system launched, including duration of time played, based on langest RetroStats: https://github.com/langest/RetroStats
 
-Example command: -c total -b 20 -n 3 -e kodi
+Example command: 
+```-c total -b 20 -n 3 -e kodi```
+
+Translation:
 "Get the total time (in hours, mins, seconds) played and display it in a bar chart of 20 steps. Get only the top 3 systems, exlcuding Kodi"
 
                      Wario Land 3 ▏ 6:36:28 ████████████████████
