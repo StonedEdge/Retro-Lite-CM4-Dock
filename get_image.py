@@ -136,8 +136,8 @@ while True:
 
 	data = open("out.bin", "rb")
 	ser = serial.Serial(pico_port, 115200)
-	ser.write(b"START")
-	print("'START' sent")
+	ser.write(b"F")
+	print("'F' sent")
 	ser.write(data.read())
 	print("Image sent")
 	data.close()
