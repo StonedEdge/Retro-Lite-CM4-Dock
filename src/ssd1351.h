@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <math.h>
 #include <string.h>
 #include <time.h>
@@ -12,13 +13,13 @@
 #include "hardware/dma.h"
 #include "hardware/spi.h"
 #include "fonts.h"
+#include "pico/stdio_usb.h"
 
-#define CS     1
-#define SCK    2
-#define MOSI   3
-#define RST    4
-#define DC     5
-#define BTN    6
+#define CS    1
+#define SCK   2
+#define MOSI  3
+#define RST   4
+#define DC    5
 
 #define SPI_PORT spi0
 
