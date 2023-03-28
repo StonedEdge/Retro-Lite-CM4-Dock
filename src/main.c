@@ -54,7 +54,7 @@ void splash_vid_single(void) {
   SSD1351_write_command(SSD1351_CMD_WRITERAM);
   SSD1351_write_data_buffer(frame[0], OLED_BUF_SIZE);
   sleep_ms(500);
-}
+  }
 
 void display_image(void) {
   SSD1351_write_command(SSD1351_CMD_WRITERAM);
@@ -173,31 +173,78 @@ void display_stats(void) {
   }  
 }
 
+bool receive_start_string() {
+    char start_str[] = "TART";
+    int start_str_index = 0;
+    int data;
+
+    while (start_str_index < strlen(start_str)) {
+        data = getchar();
+        if (data == start_str[start_str_index]) {
+            start_str_index++;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool receive_end_string() {
+    char end_str[] = "ND";
+    int end_str_index = 0;
+    int data;
+
+    while (end_str_index < strlen(end_str)) {
+        data = getchar();
+        if (data == end_str[end_str_index]) {
+            end_str_index++;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
 void serial_thread(void) {
     // Set up the variables
     char serial_input = '\0';
     int i = 0;
-
+  
       // Check if there's any serial input available
       if (stdin && !feof(stdin)) {
           // Try to read a character from the serial input
           serial_input = getchar();
 
-          // Check if the character is 'X'
-          // if (serial_input == 'X') {
-          //     multicore_reset_core1();
-          //     return;
-          // }
+          // Variables for game end message
+          char end_str[] = "END";
+          int end_str_index = 0;
 
-          if (serial_input == 'F') {
-              SSD1351_write_image();
-              sleep_ms(10);
-              SSD1351_update();
-              // multicore_reset_core1();
+          // Check if the character is 'X'
+          if (serial_input == 'X') {
+              multicore_reset_core1();
               return;
           }
-        }
-  }
+
+          if (serial_input == 'S') {
+              if (receive_start_string) {
+                SSD1351_write_image(); 
+                SSD1351_update();
+                // multicore_reset_core1();
+                return;
+            }
+          }
+
+          else if (serial_input == 'E') {
+              if (receive_end_string()) {
+                // multicore_launch_core1(display_stats);
+                SSD1351_fill(COLOR_WHITE);
+                SSD1351_update();
+                // multicore_reset_core1();
+                return;
+              }
+          }
+      }
+}
 
 int main(void){
 
@@ -220,18 +267,18 @@ int main(void){
   spi_init(SPI_PORT, 10000000);
   SSD1351_init();  
 
-  // // Set up the video thread
+  // Set up the video thread
   // multicore_launch_core1(play_splash_vid);
 
-  // // Set up the serial thread
+  // Set up the serial thread
   // serial_thread();
+  
+  while(1) {
+    serial_thread();
+    // SSD1351_write_image(); 
+    // SSD1351_update();
+  }
 
-while(1) {
-
-  serial_thread();
-  // display_stats();
-
-}
 
 
 
