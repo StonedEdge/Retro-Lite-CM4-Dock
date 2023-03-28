@@ -7,6 +7,7 @@ static DRAM displayRAM;
 #define DRAM_8 displayRAM.byte
 
 uint8_t buffer[OLED_BUF_SIZE] = {0x00};
+uint8_t image_buffer[OLED_BUF_SIZE] = {0x00};
 
 // Screen cursor for printing
 struct cursor{
@@ -247,12 +248,25 @@ void SSD1351_set_cursor(uint8_t x, uint8_t y){
   SSD1351_cursor.y = y;
 }
 
+// void SSD1351_write_image(void){
+//   int i = 0;
+//   while (i < DRAM_SIZE_8) {
+//     int data = getchar_timeout_us(0);
+//     if (data != PICO_ERROR_TIMEOUT) {
+//         DRAM_8[i++] = (uint16_t)data;
+//     }
+//   }
+// }
+
 void SSD1351_write_image(void){
+  SSD1351_clear();
   int i = 0;
   while (i < DRAM_SIZE_8) {
-    int data = getchar_timeout_us(0);
+    int data = getchar_timeout_us(100);
     if (data != PICO_ERROR_TIMEOUT) {
-        DRAM_8[i++] = (uint16_t)data;
+        image_buffer[i++] = (uint16_t)data;
     }
   }
+  sleep_ms(100);
+  memcpy(DRAM_8, image_buffer, DRAM_SIZE_8);
 }
