@@ -226,7 +226,7 @@ void serial_thread(void) {
           }
 
           if (serial_input == 'S') {
-              if (receive_start_string) {
+              if (receive_start_string()) {
                 SSD1351_write_image(); 
                 SSD1351_update();
                 // multicore_reset_core1();
