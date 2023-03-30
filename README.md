@@ -117,6 +117,10 @@ Other:
 - Written in C (Pico) & Python (CM4)
 - Uses a RP2040 Pico microcontroller
 
+# Hardware 
+![Image of Retro Lite CM4](https://i.imgur.com/LP2ecQt.png)
+Pinout to connect the OLED screen to the docking station is located above. Gerbers and files will be updated soon once the software is completed. 
+
 # To-do
 - [x] Detect current game/system booted using `runcommand`
 - [x] Add Retrolite CM4 splashscreen on boot using DMA
