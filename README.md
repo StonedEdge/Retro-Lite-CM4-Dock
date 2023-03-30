@@ -122,7 +122,7 @@ Other:
 - [x] Add Retrolite CM4 splashscreen on boot using DMA
 - [x] Downscale + convert screenshot and wheel images to 128x128 RGB565 on Pi 4 (Python)
 - [x] Detect RP2040 by Product/Vendor IDs (VID/PIDs)  
-- [x] Identify how extract game text metadata using Python 
+- [x] Identify how to extract game text metadata using Python 
 - [x] Send system stats to RP2040 over USB 
 - [x] Clear buffer when runcommand-onend.sh is executed when a game is closed, bringing back user to Pi stats view
 - [x] Stop splashscreen on COM port detect and switch to stats mode
