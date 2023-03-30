@@ -124,10 +124,10 @@ Other:
 - [x] Detect RP2040 by Product/Vendor IDs (VID/PIDs)  
 - [x] Identify how extract game text metadata using Python 
 - [x] Send system stats to RP2040 over USB 
-- [ ] Clear buffer when runcommand-onend.sh is executed when a game is closed, bringing back user to Pi stats view
-- [ ] Implement mode toggles via button state machine
-- [ ] Identify how to perform hardware scrolling of text on the SSD1351 for game descriptions
-- [ ] Implement "retrostats" mode
+- [x] Clear buffer when runcommand-onend.sh is executed when a game is closed, bringing back user to Pi stats view
 - [x] Stop splashscreen on COM port detect and switch to stats mode
-- [ ] Implement a 1 min timeout which fades black to the OLED with no user input, wake up OLED on button press (Nice to have)
+- [ ] Implement mode toggles via button state machine
+- [ ] Identify how to perform hardware (or software) scrolling of text on the SSD1351 for game descriptions
+- [ ] Implement "retrostats" mode to show user most played games by times played & time duration 
+- [ ] Implement a timeout which fades black to the OLED with no user input, wake up OLED on button press (Nice to have)
 - [ ] Implement battery stats (Nice to have) 
