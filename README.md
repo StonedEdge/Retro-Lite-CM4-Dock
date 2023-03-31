@@ -27,6 +27,7 @@ Modes currently planned are:
 # Installation
 To install, run:
 ```
+git clone https://github.com/StonedEdge/Retro-Lite-CM4-Dock.git
 sudo chmod +x install_dock.sh
 ./ install_dock.sh
 ```
