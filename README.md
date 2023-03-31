@@ -27,7 +27,8 @@ Modes currently planned are:
 # Installation
 To install, run:
 ```sudo chmod +x install_dock.sh
-./ install_dock.sh```
+./ install_dock.sh
+```
 
 I recommend scraping your media files via the inbuilt scraper in the RetroPie setup script menus. 
 
