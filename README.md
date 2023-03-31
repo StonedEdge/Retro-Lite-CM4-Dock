@@ -24,6 +24,13 @@ Modes currently planned are:
 4) Game metadata on boot (text)
 5) Game statistics (play time)
 
+# Installation
+To install, run:
+```sudo chmod +x install_dock.sh
+./ install_dock.sh```
+
+I recommend scraping your media files via the inbuilt scraper in the RetroPie setup script menus. 
+
 # Features
 
 - Console communicates to Pico over USB
