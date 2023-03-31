@@ -26,7 +26,8 @@ Modes currently planned are:
 
 # Installation
 To install, run:
-```sudo chmod +x install_dock.sh
+```
+sudo chmod +x install_dock.sh
 ./ install_dock.sh
 ```
 
