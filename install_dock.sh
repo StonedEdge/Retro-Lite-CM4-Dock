@@ -7,9 +7,6 @@ sudo apt install python3 python3-pip -y
 # Install required python packages
 pip3 install gitpython pyserial opencv-python psutil pillow
 
-# Clone the repository
-git clone https://github.com/StonedEdge/Retro-Lite-CM4-Dock.git
-
 # Find the connected USB with Pico VID and PID
 pico_port=""
 pico_device=$(ls /dev/serial/by-id/*${picoVID}*${picoPID}* 2> /dev/null)
