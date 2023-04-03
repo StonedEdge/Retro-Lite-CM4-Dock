@@ -11,7 +11,7 @@ echo "python3 has been successfully installed, moving on..."
 
 echo "Installing required python packages..."
 # Install required python packages
-if ! pip3 install gitpython pyserial opencv-python psutil pillow; then
+if ! pip3 install gitpython pyserial opencv-python-headless psutil pillow; then
     echo "Error: Failed to install required python packages"
     exit 1
 fi
