@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from lib2to3.pgen2 import pgen
 from operator import truediv
 from pickle import TRUE
@@ -136,7 +138,9 @@ while True:
 
 	data = open("out.bin", "rb")
 	ser = serial.Serial(pico_port, 115200)
-	ser.write(b"START\n") # Add a new line character after "START"
+	ser.write(b"S")
+        ser.write(b"START")
+	print("'S' sent")
 	print("'START' sent")
 	ser.write(data.read())
 	print("Image sent")
