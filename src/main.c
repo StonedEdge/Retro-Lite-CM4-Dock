@@ -10,7 +10,6 @@
 #include "pico/binary_info.h"
 #include "pico/multicore.h"
 #include "hardware/gpio.h"
-#include "hardware/dma.h"
 #include "hardware/spi.h"
 #include "ssd1351.h"
 #include "splash_vid.h"
@@ -18,6 +17,8 @@
 #define IMAGE_SIZE_BYTES 32768
 
 extern uint8_t buffer[OLED_BUF_SIZE];
+
+volatile  bool thread_running = false;
 
 void play_splash_vid(void) {
   int t = 0;
@@ -63,11 +64,6 @@ void display_image(void) {
 }
 
 void display_stats(void) {
-  // Loop splash video v times
-  for (int v = 0; v < 3; v++) {
-    splash_vid_single();
-  }
-
   // Stats to read from Pi and show on OLED
   char SD_usage[1024];      // A
   char CPU_temp[1024];      // B
@@ -94,37 +90,34 @@ void display_stats(void) {
   int g1 = 180;
   int b1 = 180;
 
-  while(1) {
+  while(thread_running) {
     // Get Values
     int s = 0;
-    while(s < 5){
-    scanf("%1024s", stat_buf);
-    
-    if (stat_buf[0] == 'A') {
-      strncpy(SD_usage, stat_buf + 1, strlen(stat_buf));
-      sleep_ms(1);
-      s++;
-    }
-    else if (stat_buf[0] == 'B') {
-      strncpy(CPU_temp, stat_buf + 1, strlen(stat_buf));
-      sleep_ms(1);
-      s++;
-    }
-    else if (stat_buf[0] == 'C') {
-      strncpy(CLK_speed, stat_buf + 1, strlen(stat_buf));
-      sleep_ms(1);
-      s++;
-    }
-    else if (stat_buf[0] == 'D') {
-      strncpy(RAM_usage, stat_buf + 1, strlen(stat_buf));
-      sleep_ms(1);
-      s++;
-    }
-    else if (stat_buf[0] == 'E') {
-      strncpy(IP_addr, stat_buf + 1, strlen(stat_buf));
-      sleep_ms(1);
-      // i++;
-    }
+    while(s < 6){
+      scanf("%16s", stat_buf);
+      if (stat_buf[0] == 'S') {
+        break;
+      }
+      else if (stat_buf[0] == 'A') {
+        strncpy(SD_usage, stat_buf + 1, strlen(stat_buf));
+        s++;
+      }
+      else if (stat_buf[0] == 'B') {
+        strncpy(CPU_temp, stat_buf + 1, strlen(stat_buf));
+        s++;
+      }
+      else if (stat_buf[0] == 'C') {
+        strncpy(CLK_speed, stat_buf + 1, strlen(stat_buf));
+        s++;
+      }
+      else if (stat_buf[0] == 'D') {
+        strncpy(RAM_usage, stat_buf + 1, strlen(stat_buf));
+        s++;
+      }
+      else if (stat_buf[0] == 'E') {
+        strncpy(IP_addr, stat_buf + 1, strlen(stat_buf));
+        s++;
+      }
     }
 
     // Clear Values
@@ -174,76 +167,84 @@ void display_stats(void) {
 }
 
 bool receive_start_string() {
-    char start_str[] = "TART";
-    int start_str_index = 0;
-    int data;
+  char start_str[] = "START";
+  int start_str_index = 0;
+  int data;
 
-    while (start_str_index < strlen(start_str)) {
-        data = getchar();
-        if (data == start_str[start_str_index]) {
-            start_str_index++;
-        } else {
-            return false;
-        }
-    }
-    return true;
+  while (start_str_index < strlen(start_str)) {
+      data = getchar();
+      if (data == start_str[start_str_index]) {
+          start_str_index++;
+      } else {
+          start_str_index = 0;
+      }
+  }
+  return true;
 }
 
 bool receive_end_string() {
-    char end_str[] = "ND";
-    int end_str_index = 0;
-    int data;
+  char end_str[] = "END";
+  int end_str_index = 0;
+  int data;
 
-    while (end_str_index < strlen(end_str)) {
-        data = getchar();
-        if (data == end_str[end_str_index]) {
-            end_str_index++;
-        } else {
-            return false;
-        }
-    }
-    return true;
+  while (end_str_index < strlen(end_str)) {
+      data = getchar();
+      if (data == end_str[end_str_index]) {
+          end_str_index++;
+      } else {
+          end_str_index = 0;
+      }
+  }
+  return true;
+}
+
+bool receive_stop_string() {
+  char stop_str[] = "X";
+  int stop_str_index = 0;
+  int data;
+
+  while (stop_str_index < strlen(stop_str)) {
+      data = getchar();
+      if (data == stop_str[stop_str_index]) {
+          stop_str_index++;
+      } else {
+          stop_str_index = 0;
+      }
+  }
+  return true;
 }
 
 void serial_thread(void) {
-    // Set up the variables
-    char serial_input = '\0';
-    int i = 0;
-  
-      // Check if there's any serial input available
-      if (stdin && !feof(stdin)) {
-          // Try to read a character from the serial input
-          serial_input = getchar();
+  // Check if there's any serial input available
+  if (stdin && !feof(stdin)) {
+    while(1){
 
-          // Variables for game end message
-          char end_str[] = "END";
-          int end_str_index = 0;
-
-          // Check if the character is 'X'
-          if (serial_input == 'X') {
-              multicore_reset_core1();
-              return;
-          }
-
-          if (serial_input == 'S') {
-              if (receive_start_string()) {
-                SSD1351_write_image(); 
-                SSD1351_update();
-                // multicore_reset_core1();
-                return;
-            }
-          }
-
-          else if (serial_input == 'E') {
-              if (receive_end_string()) {
-                // multicore_launch_core1(display_stats);
-                SSD1351_fill(COLOR_WHITE);
-                SSD1351_update();
-                // multicore_reset_core1();
-                return;
-              }
-          }
+      // Check if the string is 'X'
+      if (receive_stop_string()) {
+          multicore_reset_core1();
+          sleep_ms(10);
+          thread_running = true;
+          multicore_launch_core1(display_stats);
       }
+
+      // Check if the string is 'START'
+      if (receive_start_string()) {
+          thread_running = false;
+          multicore_reset_core1();
+          SSD1351_clear_8();
+          SSD1351_write_image(); 
+          SSD1351_update();
+      }
+      
+      // Check if the string is 'END'
+      if (receive_end_string()) {
+          SSD1351_clear_8();
+          SSD1351_update();
+          thread_running = true;
+          multicore_launch_core1(display_stats);
+      }
+    }
+  }    
 }
 
 int main(void){
@@ -264,23 +265,15 @@ int main(void){
 
   // SPI Initialisation
   stdio_init_all(); 
-  spi_init(SPI_PORT, 10000000);
+  spi_init(SPI_PORT, 15000000);
   SSD1351_init();  
 
   // Set up the video thread
-  // multicore_launch_core1(play_splash_vid);
-
-  // Set up the serial thread
-  // serial_thread();
+  multicore_launch_core1(play_splash_vid);
   
   while(1) {
     serial_thread();
-    // SSD1351_write_image(); 
-    // SSD1351_update();
   }
-
-
-
 
 return 0;
 }

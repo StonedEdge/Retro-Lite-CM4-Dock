@@ -10,10 +10,10 @@
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/gpio.h"
-#include "hardware/dma.h"
+// #include "hardware/dma.h"
 #include "hardware/spi.h"
 #include "fonts.h"
-#include "pico/stdio_usb.h"
+// #include "pico/stdio_usb.h"
 
 #define CS    1
 #define SCK   2
@@ -72,12 +72,6 @@ typedef union DisplayRAM{
 #define SSD1351_CMD_STARTSCROLL     0x9F
 
 // Some color definitions
-#define COLOR_RED 0x00F8
-#define COLOR_BLUE 0x1F00
-#define COLOR_GREEN 0xE007
-#define COLOR_YELLOW 0xFF07
-#define COLOR_PURPLE 0x1FF8
-#define COLOR_AQUA 0xE0FF
 #define COLOR_BLACK 0x0000
 #define COLOR_WHITE 0xFFFF
 
@@ -98,6 +92,8 @@ void text_update(void);
 void SSD1351_init(void);
 
 void SSD1351_clear(void);
+
+void SSD1351_clear_8(void);
 
 void SSD1351_fill(uint16_t color);
 
