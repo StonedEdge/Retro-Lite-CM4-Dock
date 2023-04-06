@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import serial
 import os
 import time
@@ -6,8 +8,6 @@ import psutil
 import socket
 import subprocess
 from serial.tools import list_ports
-
-# ser = serial.Serial("/dev/ttyACM0", baudrate=115200)
 
 def pico_com_port():
     global pico_port
@@ -52,7 +52,7 @@ while True:
     # Loop until serial connection is established
     while True:
         try:
-            ser = serial.Serial(pico_port, 115200)
+            ser = serial.Serial(pico_port, 921600)
             break
         except serial.SerialException:
             time.sleep(0.1)
@@ -83,9 +83,8 @@ while True:
     # IP Address
     host_name = os.popen("hostname -I").read()
     ip_address = host_name
-
-    ser.write("A" + disk_data.encode())
-    ser.write("B" + temp.encode())
-    ser.write("C" + clock_speed_data.encode())
-    ser.write("D" + ram_data.encode())
-    ser.write("E" + ip_address.encode())
+    ser.write(b"A" + disk_data.encode('utf-8'))
+    ser.write(b"B" + temp.encode('utf-8'))
+    ser.write(b"C" + clock_speed_data.encode('utf-8'))
+    ser.write(b"D" + ram_data.encode('utf-8'))
+    ser.write(b"E" + ip_address.encode('utf-8'))
