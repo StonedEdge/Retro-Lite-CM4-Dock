@@ -5,16 +5,18 @@
 </p>
 
 # Description 
-Note: Currently the code is a WIP and the project isn't completed yet so you won't be able to compile the program right now. 
+Updated: 2023/04/06
+Note: Currently the code will show the splashscreen & switch to show the user Pi statistics on detection of a COM port. 
+If a game is started by the user, Pi stats will close and show a combined binary image of the game being played. 
 
-A basic docking station designed to be used with the Retro Lite CM4 gaming console. The main features of this project include:
-
+A basic docking station/hub designed to be used with the Retro Lite CM4 gaming console. The main features of this project include:
 
 - Fully integrated 1.5" 128x128 SPI driven 16-bit color display 
 - User configurable splashscreen on power boot
+- 3 x external USB 2.0 ports to use for keyboard, mouse & other peripherals in desktop mode 
 - USB-C charging 
 - HDMI video output
-- Multifunction pushbutton to switch modes
+- Multifunction push button 
 
 Modes currently planned are: 
 
