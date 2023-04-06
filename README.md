@@ -36,7 +36,7 @@ sudo chmod +x install_dock.sh
 ./ install_dock.sh
 ```
 
-I recommend scraping your media files via the inbuilt scraper in the RetroPie setup script menus. 
+I recommend scraping your media files via the inbuilt scraper in the RetroPie setup script menus. This will download all of the metadata required and automatically store it in /home/pi/RetroPie/roms/{system_name}/media. 
 
 # Features
 
