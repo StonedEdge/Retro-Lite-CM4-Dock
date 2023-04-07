@@ -136,12 +136,11 @@ while True:
 
 	pico_com_port()
 
+
+	ser = serial.Serial(pico_port, 921600)
+	ser.write(b"S\n")
+	ser.write(b"START\n")
 	data = open("out.bin", "rb")
-	ser = serial.Serial(pico_port, 115200)
-	ser.write(b"S")
-        ser.write(b"START")
-	print("'S' sent")
-	print("'START' sent")
 	ser.write(data.read())
 	print("Image sent")
 	data.close()
@@ -149,3 +148,5 @@ while True:
 
 	# Remove the game start file
 	os.remove(GAME_START_FILE)
+	time.sleep(5)
+	break
