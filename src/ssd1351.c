@@ -44,6 +44,12 @@ void SSD1351_write_data_buffer(uint8_t *data, uint16_t len){
 }
 
 void SSD1351_update(void){
+  SSD1351_write_command(SSD1351_CMD_SETCOLUMN);
+  SSD1351_write_data(0x00);
+  SSD1351_write_data(0x7F);
+  SSD1351_write_command(SSD1351_CMD_SETROW);
+  SSD1351_write_data(0x00);
+  SSD1351_write_data(0x7F);
   SSD1351_write_command(SSD1351_CMD_WRITERAM);
   SSD1351_write_data_buffer(DRAM_8, DRAM_SIZE_8);
 }
