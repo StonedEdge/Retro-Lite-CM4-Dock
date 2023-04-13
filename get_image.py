@@ -138,7 +138,6 @@ while True:
 
 
 	ser = serial.Serial(pico_port, 921600)
-	ser.write(b"S\n")
 	ser.write(b"START\n")
 	data = open("out.bin", "rb")
 	ser.write(data.read())
