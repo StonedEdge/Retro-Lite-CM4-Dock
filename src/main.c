@@ -132,7 +132,6 @@ void display_stats(void) {
     SSD1351_set_cursor(5, 117);
     SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, prev_IP_addr);
 
-
     strncpy(prev_SD_usage, SD_usage, strlen(SD_usage));
     strncpy(prev_CPU_temp, CPU_temp, strlen(CPU_temp));
     strncpy(prev_CLK_speed, CLK_speed, strlen(CLK_speed));
@@ -167,51 +166,24 @@ void display_stats(void) {
 }
 
 bool receive_start_string() {
-  char start_str[] = "START";
-  int start_str_index = 0;
-  int data;
-
-  while (start_str_index < strlen(start_str)) {
-      data = getchar();
-      if (data == start_str[start_str_index]) {
-          start_str_index++;
-      } else {
-          start_str_index = 0;
-      }
-  }
-  return true;
+  char start_str[] = "START\n";
+  char input_str[strlen(start_str)+1];
+  fgets(input_str, sizeof(input_str), stdin);
+  return !strcmp(input_str, start_str);
 }
 
 bool receive_end_string() {
-  char end_str[] = "END";
-  int end_str_index = 0;
-  int data;
-
-  while (end_str_index < strlen(end_str)) {
-      data = getchar();
-      if (data == end_str[end_str_index]) {
-          end_str_index++;
-      } else {
-          end_str_index = 0;
-      }
-  }
-  return true;
+  char end_str[] = "END\n";
+  char input_str[strlen(end_str)+1];
+  fgets(input_str, sizeof(input_str), stdin);
+  return !strcmp(input_str, end_str);
 }
 
 bool receive_stop_string() {
-  char stop_str[] = "X";
-  int stop_str_index = 0;
-  int data;
-
-  while (stop_str_index < strlen(stop_str)) {
-      data = getchar();
-      if (data == stop_str[stop_str_index]) {
-          stop_str_index++;
-      } else {
-          stop_str_index = 0;
-      }
-  }
-  return true;
+  char stop_str[] = "X\n";
+  char input_str[strlen(stop_str)+1];
+  fgets(input_str, sizeof(input_str), stdin);
+  return !strcmp(input_str, stop_str);
 }
 
 void serial_thread(void) {
