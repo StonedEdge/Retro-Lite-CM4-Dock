@@ -145,8 +145,10 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [x] Send system stats to RP2040 over USB 
 - [x] Clear buffer when runcommand-onend.sh is executed when a game is closed, bringing back user to Pi stats view
 - [x] Stop splashscreen on COM port detect and switch to stats mode
-- [ ] Implement mode toggles via button state machine
-- [ ] Identify how to perform hardware (or software) scrolling of text on the SSD1351 for game descriptions
-- [ ] Implement "retrostats" mode to show user most played games by times played & time duration 
-- [ ] Implement a timeout which fades black to the OLED with no user input, wake up OLED on button press (Nice to have)
-- [ ] Implement battery stats (Nice to have) 
+- [ ] Send over RGB565 combined.png over serial without corruption, automatic switching from Pi stats to current game
+- [ ] Write a python script to scale the boxart and video frames on the Pi 4 and send over to Pico 
+- [ ] Implement mode toggles via button state machine to switch between the modes
+- [ ] Identify how to perform hardware (or software) scrolling of text on the SSD1351 for game description & metadata
+- [ ] Implement "retrostats" mode to show user most played games by times played & time duration using the RetroStats langest script 
+- [ ] Implement a timeout which fades black to the OLED with no user input, wake up OLED on button press after 5 mins of no activity 
+- [ ] Gracefully shutdown the OLED display when the connected system is turned off 
