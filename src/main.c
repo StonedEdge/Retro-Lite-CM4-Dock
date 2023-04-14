@@ -93,8 +93,7 @@ void display_stats(void) {
   while(thread_running) {
     // Get Values
     
-    //Changed the While statement here as it seems to be an unusual way to do this. Not relevant to the problem, feel free to change it back if this causes problems.
-    /*int s = 0;
+    int s = 0;
     while(s < 6){
       scanf("%16s", stat_buf);
       if (stat_buf[0] == 'S') {
@@ -120,26 +119,6 @@ void display_stats(void) {
         strncpy(IP_addr, stat_buf + 1, strlen(stat_buf));
         s++;
       }
-    }*/
-    
-    scanf("%16s", stat_buf);
-    if (stat_buf[0] == 'S') {
-      //Do Nothing
-    }
-    else if (stat_buf[0] == 'A') {
-      strncpy(SD_usage, stat_buf + 1, strlen(stat_buf));
-    }
-    else if (stat_buf[0] == 'B') {
-      strncpy(CPU_temp, stat_buf + 1, strlen(stat_buf));
-    }
-    else if (stat_buf[0] == 'C') {
-      strncpy(CLK_speed, stat_buf + 1, strlen(stat_buf));
-    }
-    else if (stat_buf[0] == 'D') {
-      strncpy(RAM_usage, stat_buf + 1, strlen(stat_buf));
-    }
-    else (stat_buf[0] == 'E') {
-      strncpy(IP_addr, stat_buf + 1, strlen(stat_buf));
     }
 
     // Clear Values
