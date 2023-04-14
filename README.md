@@ -7,7 +7,7 @@
 # Description 
 Updated: 2023/04/06
 
-Note: Currently the code will show the splashscreen & switch to show the user Pi statistics on detection of a COM port. 
+Note: Currently the code will show the splashscreen & switch to show the user Pi statistics on detection of a COM port. Still a lot of bugs, wouldn't recommend using this right now. 
 
 If a game is started by the user, Pi stats will close and show a combined binary image of the game being played. 
 
