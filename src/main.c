@@ -251,7 +251,7 @@ void button_loop(void) {
   uint32_t last_press_time = 0;
 
   while (button_thread_running) {
-      if (gpio_get(button_pin)) {
+      if (!gpio_get(button_pin)) {  // Active low 
         uint32_t current_time = time_us_32();
         if (current_time - last_press_time >= debounce_time * 1000) {
           last_press_time = current_time;
