@@ -15,10 +15,17 @@
 #include "splash_vid.h"
 
 #define IMAGE_SIZE_BYTES 32768
+#define button_pin 6
+#define debounce_time 100
 
 extern uint8_t buffer[OLED_BUF_SIZE];
 
-volatile  bool thread_running = false;
+uint8_t boxart_buffer[IMAGE_SIZE_BYTES] = {0x00};
+uint8_t combined_buffer[IMAGE_SIZE_BYTES] = {0x00};
+uint8_t consol_buffer[IMAGE_SIZE_BYTES] = {0x00};
+
+volatile  bool stats_thread_running = false;
+volatile  bool button_thread_running = false;
 
 void play_splash_vid(void) {
   int t = 0;
@@ -57,12 +64,6 @@ void splash_vid_single(void) {
   sleep_ms(500);
   }
 
-void display_image(void) {
-  SSD1351_write_command(SSD1351_CMD_WRITERAM);
-  spi_write_blocking(SPI_PORT, buffer, OLED_BUF_SIZE);
-  SSD1351_update();
-}
-
 void display_stats(void) {
   // Stats to read from Pi and show on OLED
   char SD_usage[1024];      // A
@@ -90,13 +91,12 @@ void display_stats(void) {
   int g1 = 180;
   int b1 = 180;
 
-  while(thread_running) {
+  while(stats_thread_running) {
     // Get Values
-    
     int s = 0;
     while(s < 6){
       scanf("%16s", stat_buf);
-      if (stat_buf[0] == 'S') {
+      if (stat_buf[0] == 's') {
         break;
       }
       else if (stat_buf[0] == 'A') {
@@ -167,7 +167,7 @@ void display_stats(void) {
 }
 
 bool receive_start_string() {
-  char start_str[] = "START\n";
+  char start_str[] = "start";
   int start_str_index = 0;
   int data;
 
@@ -179,11 +179,11 @@ bool receive_start_string() {
           start_str_index = 0;
       }
   }
-  return start_str_index == strlen(start_str);
+  return true;
 }
 
 bool receive_end_string() {
-  char end_str[] = "END\n";
+  char end_str[] = "END";
   int end_str_index = 0;
   int data;
 
@@ -195,11 +195,11 @@ bool receive_end_string() {
           end_str_index = 0;
       }
   }
-  return end_str_index == strlen(end_str);
+  return true;
 }
 
 bool receive_stop_string() {
-  char stop_str[] = "X\n";
+  char stop_str[] = "X";
   int stop_str_index = 0;
   int data;
 
@@ -211,7 +211,77 @@ bool receive_stop_string() {
           stop_str_index = 0;
       }
   }
-  return stop_str_index == strlen(stop_str);
+  return true;
+}
+
+bool receive_boxart_string() {
+  char boxart_str[] = "box";
+  int boxart_str_index = 0;
+  int data;
+
+  while (boxart_str_index < strlen(boxart_str)) {
+      data = getchar();
+      if (data == boxart_str[boxart_str_index]) {
+          boxart_str_index++;
+      } else {
+          boxart_str_index = 0;
+      }
+  }
+  return true;
+}
+
+bool receive_consol_string() {
+  char consol_str[] = "consol";
+  int consol_str_index = 0;
+  int data;
+
+  while (consol_str_index < strlen(consol_str)) {
+      data = getchar();
+      if (data == consol_str[consol_str_index]) {
+          consol_str_index++;
+      } else {
+          consol_str_index = 0;
+      }
+  }
+  return true;
+}
+
+void button_loop(void) {
+  int current_display = 0; // start with the first image
+  uint32_t last_press_time = 0;
+
+  while (button_thread_running) {
+      if (gpio_get(button_pin)) {
+        uint32_t current_time = time_us_32();
+        if (current_time - last_press_time >= debounce_time * 1000) {
+          last_press_time = current_time;
+          
+          // Button is pressed, cycle through the displays
+          current_display++;
+          if (current_display > 2) {
+              current_display = 0; // cycle back to the first display
+          }
+          switch (current_display) {
+              case 0:
+                  SSD1351_clear_8();
+                  // Display the combined image
+                  SSD1351_display_image(combined_buffer);
+                  break;
+              case 1:
+                  SSD1351_clear_8();
+                  // Display the boxart image
+                  SSD1351_display_image(boxart_buffer);
+                  break;
+              case 2:
+                  SSD1351_clear_8();
+                  // Display the consol image
+                  SSD1351_display_image(consol_buffer);
+                  break;
+          }
+        }
+      }
+      sleep_ms(10); // wait a short time before checking again
+  }
 }
 
 void serial_thread(void) {
@@ -222,25 +292,39 @@ void serial_thread(void) {
       // Check if the string is 'X'
       if (receive_stop_string()) {
           multicore_reset_core1();
-          sleep_ms(10);
-          thread_running = true;
+          // sleep_ms(10);
+          stats_thread_running = true;
           multicore_launch_core1(display_stats);
       }
 
-      // Check if the string is 'START'
+      // Check if the string is 'start'
       if (receive_start_string()) {
-          thread_running = false;
+          stats_thread_running = false;
           multicore_reset_core1();
           SSD1351_clear_8();
-          SSD1351_write_image(); 
-          SSD1351_update();
+          SSD1351_get_image(combined_buffer); 
+          SSD1351_display_image(combined_buffer);
+          button_thread_running = true;
+          multicore_launch_core1(button_loop);
+      }
+
+      // Check if the string is 'box'
+      if (receive_boxart_string()) {
+          SSD1351_get_image(boxart_buffer); 
+      }
+
+      // Check if the string is 'consol'
+      if (receive_consol_string()) {
+          SSD1351_get_image(consol_buffer); 
       }
       
       // Check if the string is 'END'
       if (receive_end_string()) {
+          button_thread_running = false;
+          multicore_reset_core1();
           SSD1351_clear_8();
           SSD1351_update();
-          thread_running = true;
+          stats_thread_running = true;
           multicore_launch_core1(display_stats);
       }
     }
@@ -262,6 +346,8 @@ int main(void){
   gpio_set_dir(DC,GPIO_OUT);
   gpio_init(RST);
   gpio_set_dir(RST,GPIO_OUT);
+  gpio_init(button_pin);
+  gpio_set_dir(button_pin, GPIO_IN);
 
   // SPI Initialisation
   stdio_init_all(); 
