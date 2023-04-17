@@ -267,15 +267,22 @@ void SSD1351_set_cursor(uint8_t x, uint8_t y){
 //   }
 // }
 
-void SSD1351_write_image(void){
+void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]){
   SSD1351_clear();
   int i = 0;
   while (i < DRAM_SIZE_8) {
     int data = getchar_timeout_us(0);
     if (data != PICO_ERROR_TIMEOUT) {
-        buffer[i++] = (uint8_t)data;
+        buf[i++] = (uint16_t)data;
     }
   }
-  sleep_ms(100);
-  memcpy(DRAM_8, buffer, DRAM_SIZE_8);
+  // sleep_ms(100);
+  // memcpy(DRAM_8, buf, DRAM_SIZE_8);
+}
+
+void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]) {
+  SSD1351_write_command(SSD1351_CMD_WRITERAM);
+  // spi_write_blocking(SPI_PORT, buf, OLED_BUF_SIZE);
+  memcpy(DRAM_8, buf, DRAM_SIZE_8);
+  SSD1351_update();
 }
