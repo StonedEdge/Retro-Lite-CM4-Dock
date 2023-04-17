@@ -111,4 +111,6 @@ void SSD1351_printf(uint16_t color, font_t font, const char *format, ...);
 
 void SSD1351_set_cursor(uint8_t x, uint8_t y);
 
-void SSD1351_write_image(void);
+void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]);
+
+void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]);
