@@ -41,6 +41,7 @@ def get_img_directories():
 	screenshot = retropie_oled_img_dir[0].rstrip('\n')
 	wheel = retropie_oled_img_dir[1].rstrip('\n')
 	boxart = retropie_oled_img_dir[2].rstrip('\n')
+	boxart = retropie_oled_img_dir[3].rstrip('\n')
 
 def center_crop(img,dim):
 	width, height = img.shape[1], img.shape[0]
@@ -52,6 +53,189 @@ def center_crop(img,dim):
 
 GAME_START_FILE = '/dev/shm/runcommand.info'
 
+def get_combined_image():
+    img = cv2.imread(screenshot, cv2.IMREAD_UNCHANGED)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+    img2 = cv2.imread(wheel, cv2.IMREAD_UNCHANGED)
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGBA)
+
+    if img.shape[1] > img.shape[0]:
+        r = 128.0 / img.shape[0]
+        dim = (int(img.shape[1] * r), 128)
+    elif img.shape[0] > img.shape[1]:
+        r = 128.0 / img.shape[1]
+        dim = (128, int(img.shape[0] * r))
+    else:
+        dim = (128,128)
+
+    img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+    img = cv2.copyMakeBorder(img, 128, 128 ,128, 128, cv2.BORDER_CONSTANT, value=[0,0,0,0])
+    img = center_crop(img, (128,128))
+
+    r = 128.0 / img2.shape[1]
+    dim = (128, int(img2.shape[0] * r))
+
+    img2 = cv2.resize(img2, dim, interpolation=cv2.INTER_AREA)
+    img2 = cv2.copyMakeBorder(img2, 128, 128 ,128, 128, cv2.BORDER_CONSTANT, value=[0,0,0,0])
+    img2 = center_crop(img2, (128,128))
+
+    cv2.imwrite('screenshot_scaled.png', img)
+    cv2.imwrite('wheel_scaled.png', img2)
+
+    background = Image.fromarray(img)
+    foreground = Image.fromarray(img2)
+
+    background.paste(foreground, (0, 0), foreground)
+    output = background.save('combined.png')
+    
+    len_argument = len(sys.argv)
+    filesize = 0
+    if (len_argument != 7):
+        sys.exit(0)
+    try:
+        im=Image.open(sys.argv[1])
+    except:
+        print("Failed to open png file ", sys.argv[1])
+        sys.exit(0)
+
+    image_height = im.size[1]
+    image_width = im.size[0]
+
+    try:
+        binoutfile = open(sys.argv[2],"wb")
+    except:
+        print ("Can't write the binary file %s" % sys.argv[2])
+        sys.exit(0)
+
+    pix = im.load()
+    for h in range(image_height):
+        for w in range(image_width):
+            if w < im.size[0]:
+                R=pix[w,h][0]>>3
+                G=pix[w,h][1]>>2
+                B=pix[w,h][2]>>3
+
+                rgb = (R<<11) | (G<<5) | B
+
+                binoutfile.write(struct.pack('H', rgb))
+            else:
+                rgb = 0
+
+    binoutfile.close()
+
+def get_boxart_image():
+    img = cv2.imread(boxart, cv2.IMREAD_UNCHANGED)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+
+    if img.shape[1] > img.shape[0]:
+        r = 128.0 / img.shape[0]
+        dim = (int(img.shape[1] * r), 128)
+    elif img.shape[0] > img.shape[1]:
+        r = 128.0 / img.shape[1]
+        dim = (128, int(img.shape[0] * r))
+    else:
+        dim = (128,128)
+
+    img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+    img = cv2.copyMakeBorder(img, 128, 128 ,128, 128, cv2.BORDER_CONSTANT, value=[0,0,0,0])
+    img = center_crop(img, (128,128))
+
+    cv2.imwrite('boxart_scaled.png', img)
+
+    boxart_image = Image.fromarray(img)
+
+    output = boxart_image.save('boxart.png')
+
+    try:
+        im=Image.open(sys.argv[3])
+    except:
+        print("Failed to open png file ", sys.argv[3])
+        sys.exit(0)
+
+    image_height = im.size[1]
+    image_width = im.size[0]
+
+    try:
+        binoutfile = open(sys.argv[4],"wb")
+    except:
+        print ("Can't write the binary file %s" % sys.argv[4])
+        sys.exit(0)
+
+
+    pix = im.load()
+    for h in range(image_height):
+        for w in range(image_width):
+            if w < im.size[0]:
+                R=pix[w,h][0]>>3
+                G=pix[w,h][1]>>2
+                B=pix[w,h][2]>>3
+
+                rgb = (R<<11) | (G<<5) | B
+
+                binoutfile.write(struct.pack('H', rgb))
+            else:
+                rgb = 0
+
+    binoutfile.close()
+
+def get_consol_image():
+    img = cv2.imread(consol, cv2.IMREAD_UNCHANGED)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+    
+    if img.shape[1] > img.shape[0]:
+        r = 128.0 / img.shape[0]
+        dim = (int(img.shape[1] * r), 128)
+    elif img.shape[0] > img.shape[1]:
+        r = 128.0 / img.shape[1]
+        dim = (128, int(img.shape[0] * r))
+    else:
+        dim = (128,128)
+        
+    img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+    img = cv2.copyMakeBorder(img, 128, 128 ,128, 128, cv2.BORDER_CONSTANT, value=[0,0,0,0])
+    img = center_crop(img, (128,128))
+        
+    cv2.imwrite('consol.png', img)
+
+    consol_image = Image.fromarray(img)
+
+    output = consol_image.save('consol.png')
+    
+    len_argument = len(sys.argv)
+    filesize = 0
+    if (len_argument != 7):
+        sys.exit(0)
+    try:
+        im=Image.open(sys.argv[5])
+    except:
+        print("Failed to open png file ", sys.argv[5])
+        sys.exit(0)
+
+    image_height = im.size[1]
+    image_width = im.size[0]
+
+    try:
+        binoutfile = open(sys.argv[6],"wb")
+    except:
+        print ("Can't write the binary file %s" % sys.argv[6])
+        sys.exit(0)
+
+    pix = im.load()
+    for h in range(image_height):
+        for w in range(image_width):
+            if w < im.size[0]:
+                R=pix[w,h][0]>>3
+                G=pix[w,h][1]>>2
+                B=pix[w,h][2]>>3
+
+                rgb = (R<<11) | (G<<5) | B
+
+                binoutfile.write(struct.pack('H', rgb))
+            else:
+                rgb = 0
+
+    binoutfile.close()
+    
 while True:
 	# Wait for game launch event file to be created
 	while not os.path.exists(GAME_START_FILE):
@@ -60,88 +244,34 @@ while True:
 		time.sleep(0.1)
 
 	get_img_directories()
-	img = cv2.imread(screenshot, cv2.IMREAD_UNCHANGED)
-	img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
-	img2 = cv2.imread(wheel, cv2.IMREAD_UNCHANGED)
-	img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGBA)
-
-	if img.shape[1] > img.shape[0]:
-		r = 128.0 / img.shape[0]
-		dim = (int(img.shape[1] * r), 128)
-	elif img.shape[0] > img.shape[1]:
-		r = 128.0 / img.shape[1]
-		dim = (128, int(img.shape[0] * r))
-	else:
-		dim = (128,128)
-
-	img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-	img = cv2.copyMakeBorder(img, 128, 128 ,128, 128, cv2.BORDER_CONSTANT, value=[0,0,0,0])
-	img = center_crop(img, (128,128))
-
-	r = 128.0 / img2.shape[1]
-	dim = (128, int(img2.shape[0] * r))
-
-	img2 = cv2.resize(img2, dim, interpolation=cv2.INTER_AREA)
-	img2 = cv2.copyMakeBorder(img2, 128, 128 ,128, 128, cv2.BORDER_CONSTANT, value=[0,0,0,0])
-	img2 = center_crop(img2, (128,128))
-
-	cv2.imwrite('screenshot_scaled.png', img)
-	cv2.imwrite('wheel_scaled.png', img2)
-
-	background = Image.fromarray(img)
-	foreground = Image.fromarray(img2)
-
-	background.paste(foreground, (0, 0), foreground)
-	output = background.save('combined.png')
-
-	len_argument = len(sys.argv)
-	filesize = 0
-	if (len_argument != 3):
-		print("")
-		print("Correct Usage:")
-		print ("\tpython get_image.py <pngfile> <binary_file>")
-		print ("")
-		sys.exit(0)
-
-	try:
-		im=Image.open(sys.argv[1])
-	except:
-		print("Failed to open png file ", sys.argv[1])
-		sys.exit(0)
-
-	image_height = im.size[1]
-	image_width = im.size[0]
-
-	try:
-		binoutfile = open(sys.argv[2],"wb")
-	except:
-		print ("Can't write the binary file %s" % sys.argv[2])
-		sys.exit(0)
-
-	pix = im.load()
-	for h in range(image_height):
-		for w in range(image_width):
-			if w < im.size[0]:
-				R=pix[w,h][0]>>3
-				G=pix[w,h][1]>>2
-				B=pix[w,h][2]>>3
-
-				rgb = (R<<11) | (G<<5) | B
-
-				binoutfile.write(struct.pack('H', rgb))
-			else:
-				rgb = 0
-
-	binoutfile.close()
 
 	pico_com_port()
 
-
+	# Send combined image to Pico
+	get_combined_image()
 	ser = serial.Serial(pico_port, 921600)
-	ser.write(b"START\n")
-	data = open("out.bin", "rb")
+	ser.write(b"s\n")
+	ser.write(b"start\n")
+	data = open("combined.bin", "rb")
 	ser.write(data.read())
-	print("Image sent")
+	data.close()
+	ser.close()
+	
+	# Send boxart image to Pico
+	get_combined_image()
+	ser = serial.Serial(pico_port, 921600)
+	ser.write(b"box\n")
+	data = open("boxart.bin", "rb")
+	ser.write(data.read())
+	data.close()
+	ser.close()
+	
+	# Send consol image to Pico
+	get_combined_image()
+	ser = serial.Serial(pico_port, 921600)
+	ser.write(b"consol\n")
+	data = open("consol.bin", "rb")
+	ser.write(data.read())
 	data.close()
 	ser.close()
 
