@@ -126,18 +126,18 @@ def get_boxart_image():
     img = cv2.imread(boxart, cv2.IMREAD_UNCHANGED)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
 
-    if img.shape[1] > img.shape[0]:
+    if img.shape[0] > img.shape[1]:
         r = 128.0 / img.shape[0]
         dim = (int(img.shape[1] * r), 128)
-    elif img.shape[0] > img.shape[1]:
+    elif img.shape[1] > img.shape[0]:
         r = 128.0 / img.shape[1]
         dim = (128, int(img.shape[0] * r))
     else:
-        dim = (128,128)
+        dim = (128, 128)
 
     img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-    img = cv2.copyMakeBorder(img, 128, 128 ,128, 128, cv2.BORDER_CONSTANT, value=[0,0,0,0])
-    img = center_crop(img, (128,128))
+    img = cv2.copyMakeBorder(img, 128, 128, 128, 128, cv2.BORDER_CONSTANT, value=[0, 0, 0, 0])
+    img = center_crop(img, (128, 128))
 
     cv2.imwrite('boxart_scaled.png', img)
 
@@ -257,7 +257,7 @@ while True:
 	ser.close()
 	
 	# Send boxart image to Pico
-	get_combined_image()
+	get_boxart_image()
 	ser = serial.Serial(pico_port, 921600)
 	ser.write(b"box\n")
 	data = open("boxart.bin", "rb")
@@ -266,7 +266,7 @@ while True:
 	ser.close()
 	
 	# Send consol image to Pico
-	get_combined_image()
+	get_consol_image()
 	ser = serial.Serial(pico_port, 921600)
 	ser.write(b"consol\n")
 	data = open("consol.bin", "rb")
