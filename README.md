@@ -146,9 +146,10 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [x] Clear buffer when runcommand-onend.sh is executed when a game is closed, bringing back user to Pi stats view
 - [x] Stop splashscreen on COM port detect and switch to stats mode
 - [ ] Send over RGB565 combined.png over serial without corruption, automatic switching from Pi stats to current game
-- [ ] Write a python script to scale the boxart and video frames on the Pi 4 and send over to Pico 
-- [ ] Send over random image to Pico located in consolevectors based on current system being launched on RetroPie (no scaling necessary)
-- [ ] Implement mode toggles via button state machine to switch between the modes
+- [x] Write a python script to scale the boxart correctly to fit the screen
+- [ ] Write a python script to break up video into individual frames on the Pi 4 and send over to Pico 
+- [x] Send over random image to Pico located in consolevectors based on current system being launched on RetroPie (no scaling necessary)
+- [x] Implement mode toggles via button state machine to switch between the modes
 - [ ] Identify how to perform hardware (or software) scrolling of text on the SSD1351 for game description & metadata
 - [ ] Implement "retrostats" mode to show user most played games by times played & time duration using the RetroStats langest script 
 - [ ] Implement a timeout which fades black to the OLED with no user input, wake up OLED on button press after 5 mins of no activity 
