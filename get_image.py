@@ -41,6 +41,7 @@ def get_img_directories():
 	screenshot = retropie_oled_img_dir[0].rstrip('\n')
 	wheel = retropie_oled_img_dir[1].rstrip('\n')
 	boxart = retropie_oled_img_dir[2].rstrip('\n')
+	consol = retropie_oled_img_dir[3].rstrip('\n')
 
 def center_crop(img,dim):
 	width, height = img.shape[1], img.shape[0]
