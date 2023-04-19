@@ -16,6 +16,7 @@ import xml.etree.ElementTree as et
 import xml.sax.saxutils as saxutils
 import cv2
 import psutil
+import random
 from PIL import Image, ImageDraw
 
 def pico_com_port():
@@ -34,7 +35,7 @@ def pico_com_port():
             print("Raspberry Pi Pico failed to open serial port. Please check VID and PID IDs are correct.")
 
 def get_img_directories():
-	global wheel, screenshot, boxart
+	global wheel, screenshot, boxart, consol
 	tempFile = open('/tmp/retropie-oled.log', 'r', -1)    # , "utf-8")
 	retropie_oled_img_dir = tempFile.readlines()
 	tempFile.close()
@@ -179,28 +180,28 @@ def get_boxart_image():
     binoutfile.close()
 
 def get_consol_image():
-    img = cv2.imread(consol, cv2.IMREAD_UNCHANGED)
+    consol_dir = os.path.abspath(os.path.dirname(consol))
+    consol_dir = os.path.join(consol_dir, os.path.basename(consol))
+    consol_images = [f for f in os.listdir(consol_dir) if os.path.isfile(os.path.join(consol_dir, f)) and f.endswith('.png')]
+
+    if not consol_images:
+        print(f"Consol directory: {consol_dir}")
+        sys.exit(0)
+
+    consol_image_file = random.choice(consol_images)
+    consol_image_path = os.path.join(consol_dir, consol_image_file)
+
+    img = cv2.imread(consol_image_path, cv2.IMREAD_UNCHANGED)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
-    
-    if img.shape[1] > img.shape[0]:
-        r = 128.0 / img.shape[0]
-        dim = (int(img.shape[1] * r), 128)
-    elif img.shape[0] > img.shape[1]:
-        r = 128.0 / img.shape[1]
-        dim = (128, int(img.shape[0] * r))
-    else:
-        dim = (128,128)
-        
-    img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+
     img = cv2.copyMakeBorder(img, 128, 128 ,128, 128, cv2.BORDER_CONSTANT, value=[0,0,0,0])
     img = center_crop(img, (128,128))
-        
+
     cv2.imwrite('consol.png', img)
 
     consol_image = Image.fromarray(img)
 
-    output = consol_image.save('consol.png')
-    
+    output = consol_image.save('consol.png')    
     len_argument = len(sys.argv)
     filesize = 0
     if (len_argument != 7):
