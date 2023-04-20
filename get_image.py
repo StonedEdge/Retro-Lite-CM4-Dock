@@ -20,19 +20,26 @@ import random
 from PIL import Image, ImageDraw
 
 def pico_com_port():
-    global pico_port
+    global pico_ports
     picoVID = "2E8A" # Pico USB Vendor ID
     picoPID = "000A" # Pico USB product ID
     port_list = serial.tools.list_ports.comports()
 
+    pico_ports = []
     for device in port_list:
         if (device.vid != None or device.pid != None):
             if ('{:04X}'.format(device.vid) == picoVID and
                 '{:04X}'.format(device.pid) == picoPID):
-                pico_port = device.device
-                break
-            pico_port = None
-            print("Raspberry Pi Pico failed to open serial port. Please check VID and PID IDs are correct.")
+                pico_ports.append(device.device)
+
+    if len(pico_ports) == 0:
+        print("Raspberry Pi Pico not found. Please check VID and PID IDs are correct.")
+    elif len(pico_ports) == 1:
+        print("1 Pico device found at port: ", pico_ports[0])
+    else:
+        print(len(pico_ports), "Pico devices found at ports: ", pico_ports)
+
+    return pico_ports
 
 def get_img_directories():
 	global wheel, screenshot, boxart, consol
@@ -238,45 +245,46 @@ def get_consol_image():
     binoutfile.close()
     
 while True:
-	# Wait for game launch event file to be created
-	while not os.path.exists(GAME_START_FILE):
-		time.sleep(0.1)
-	while not os.path.exists('/tmp/retropie-oled.log'):
-		time.sleep(0.1)
+    # Wait for game launch event file to be created
+    while not os.path.exists(GAME_START_FILE):
+        time.sleep(0.1)
+    while not os.path.exists('/tmp/retropie-oled.log'):
+        time.sleep(0.1)
 
-	get_img_directories()
+    get_img_directories()
 
-	pico_com_port()
+    pico_ports = pico_com_port()
 
-	# Send combined image to Pico
-	get_combined_image()
-	ser = serial.Serial(pico_port, 921600)
-	ser.write(b"s\n")
-	ser.write(b"start\n")
-	data = open("combined.bin", "rb")
-	ser.write(data.read())
-	data.close()
-	ser.close()
-	
-	# Send boxart image to Pico
-	get_boxart_image()
-	ser = serial.Serial(pico_port, 921600)
-	ser.write(b"box\n")
-	data = open("boxart.bin", "rb")
-	ser.write(data.read())
-	data.close()
-	ser.close()
-	
-	# Send consol image to Pico
-	get_consol_image()
-	ser = serial.Serial(pico_port, 921600)
-	ser.write(b"consol\n")
-	data = open("consol.bin", "rb")
-	ser.write(data.read())
-	data.close()
-	ser.close()
+    for port in pico_ports:
+        # Send combined image to Pico
+        get_combined_image()
+        ser = serial.Serial(port, 921600)
+        ser.write(b"s\n")
+        ser.write(b"start\n")
+        data = open("combined.bin", "rb")
+        ser.write(data.read())
+        data.close()
+        ser.close()
+        
+        # Send boxart image to Pico
+        get_boxart_image()
+        ser = serial.Serial(port, 921600)
+        ser.write(b"box\n")
+        data = open("boxart.bin", "rb")
+        ser.write(data.read())
+        data.close()
+        ser.close()
+        
+        # Send consol image to Pico
+        get_consol_image()
+        ser = serial.Serial(port, 921600)
+        ser.write(b"consol\n")
+        data = open("consol.bin", "rb")
+        ser.write(data.read())
+        data.close()
+        ser.close()
 
-	# Remove the game start file
-	os.remove(GAME_START_FILE)
-	time.sleep(5)
-	break
+    # Remove the game start file
+    os.remove(GAME_START_FILE)
+    time.sleep(5)
+    break
