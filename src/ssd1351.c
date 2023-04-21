@@ -257,20 +257,10 @@ void SSD1351_set_cursor(uint8_t x, uint8_t y){
   SSD1351_cursor.y = y;
 }
 
-// void SSD1351_write_image(void){
-//   int i = 0;
-//   while (i < DRAM_SIZE_8) {
-//     int data = getchar_timeout_us(100000);
-//     if (data != PICO_ERROR_TIMEOUT) {
-//         DRAM_8[i++] = (uint8_t)data;
-//     }
-//   }
-// }
-
 void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]){
   SSD1351_clear();
   int i = 0;
-  while (i < DRAM_SIZE_8) {
+  while (i < (DRAM_SIZE_8 - 1 )) {
     int data = getchar_timeout_us(0);
     if (data != PICO_ERROR_TIMEOUT) {
         buf[i++] = (uint16_t)data;
