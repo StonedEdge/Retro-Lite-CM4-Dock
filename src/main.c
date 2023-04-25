@@ -133,6 +133,7 @@ void display_stats(void) {
     SSD1351_set_cursor(5, 117);
     SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, prev_IP_addr);
 
+
     strncpy(prev_SD_usage, SD_usage, strlen(SD_usage));
     strncpy(prev_CPU_temp, CPU_temp, strlen(CPU_temp));
     strncpy(prev_CLK_speed, CLK_speed, strlen(CLK_speed));
@@ -251,7 +252,7 @@ void button_loop(void) {
   uint32_t last_press_time = 0;
 
   while (button_thread_running) {
-      if (!gpio_get(button_pin)) {  // Active low 
+      if (!gpio_get(button_pin)) {
         uint32_t current_time = time_us_32();
         if (current_time - last_press_time >= debounce_time * 1000) {
           last_press_time = current_time;
@@ -348,6 +349,7 @@ int main(void){
   gpio_set_dir(RST,GPIO_OUT);
   gpio_init(button_pin);
   gpio_set_dir(button_pin, GPIO_IN);
+  gpio_pull_up(button_pin);
 
   // SPI Initialisation
   stdio_init_all(); 
