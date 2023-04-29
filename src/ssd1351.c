@@ -257,17 +257,15 @@ void SSD1351_set_cursor(uint8_t x, uint8_t y){
   SSD1351_cursor.y = y;
 }
 
-void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]){
+void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]) {
   SSD1351_clear();
-  int i = 0;
-  while (i < (DRAM_SIZE_8 - 1 )) {
-    int data = getchar_timeout_us(0);
+  uint32_t i = 0;
+  while (i < (DRAM_SIZE_8) {
+    int data = getchar_timeout_us(10000);
     if (data != PICO_ERROR_TIMEOUT) {
-        buf[i++] = (uint16_t)data;
+      buf[i++] = data;
     }
   }
-  // sleep_ms(100);
-  // memcpy(DRAM_8, buf, DRAM_SIZE_8);
 }
 
 void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]) {
