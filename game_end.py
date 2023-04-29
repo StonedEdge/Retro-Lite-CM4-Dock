@@ -26,8 +26,8 @@ def wait_for_connection():
 			print("Pico not connected")
 
 def send_game_closed_to_pico(port):
-    ser = serial.Serial(port, 115200)
-    ser.write(b"END")
+    ser = serial.Serial(port, 921600)
+    ser.write(b"END\n")
     ser.close
 
 # Wait for the Pico connection
