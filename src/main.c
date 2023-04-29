@@ -168,7 +168,7 @@ void display_stats(void) {
 }
 
 bool receive_start_string() {
-  char start_str[] = "start";
+  char start_str[] = "start\n";
   int start_str_index = 0;
   int data;
 
@@ -184,7 +184,7 @@ bool receive_start_string() {
 }
 
 bool receive_end_string() {
-  char end_str[] = "END";
+  char end_str[] = "END\n";
   int end_str_index = 0;
   int data;
 
@@ -200,7 +200,7 @@ bool receive_end_string() {
 }
 
 bool receive_stop_string() {
-  char stop_str[] = "X";
+  char stop_str[] = "X\n";
   int stop_str_index = 0;
   int data;
 
@@ -216,7 +216,7 @@ bool receive_stop_string() {
 }
 
 bool receive_boxart_string() {
-  char boxart_str[] = "box";
+  char boxart_str[] = "box\n";
   int boxart_str_index = 0;
   int data;
 
@@ -232,7 +232,7 @@ bool receive_boxart_string() {
 }
 
 bool receive_consol_string() {
-  char consol_str[] = "consol";
+  char consol_str[] = "consol\n";
   int consol_str_index = 0;
   int data;
 
