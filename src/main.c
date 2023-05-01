@@ -214,37 +214,6 @@ bool receive_stop_string() {
   return true;
 }
 
-bool receive_boxart_string() {
-  char boxart_str[] = "box";
-  int boxart_str_index = 0;
-  int data;
-
-  while (boxart_str_index < strlen(boxart_str)) {
-      data = getchar();
-      if (data == boxart_str[boxart_str_index]) {
-          boxart_str_index++;
-      } else {
-          boxart_str_index = 0;
-      }
-  }
-  return true;
-}
-
-bool receive_consol_string() {
-  char consol_str[] = "consol";
-  int consol_str_index = 0;
-  int data;
-
-  while (consol_str_index < strlen(consol_str)) {
-      data = getchar();
-      if (data == consol_str[consol_str_index]) {
-          consol_str_index++;
-      } else {
-          consol_str_index = 0;
-      }
-  }
-  return true;
-}
 
 void button_loop(void) {
   int current_display = 0; // start with the first image
@@ -303,21 +272,11 @@ void serial_thread(void) {
           multicore_reset_core1();
           SSD1351_clear_8();
           SSD1351_get_image(combined_buffer); 
-		  SSD1351_get_image(boxart_buffer); 
-		  SSD1351_get_image(consol_buffer); 
+	  SSD1351_get_image(boxart_buffer); 
+          SSD1351_get_image(consol_buffer); 
           SSD1351_display_image(combined_buffer);
           button_thread_running = true;
           multicore_launch_core1(button_loop);
-      }
-
-      // Check if the string is 'box'
-      if (receive_boxart_string()) {
-          SSD1351_get_image(boxart_buffer); 
-      }
-
-      // Check if the string is 'consol'
-      if (receive_consol_string()) {
-          SSD1351_get_image(consol_buffer); 
       }
       
       // Check if the string is 'END'
