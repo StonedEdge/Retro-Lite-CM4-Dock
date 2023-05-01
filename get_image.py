@@ -16,6 +16,7 @@ import xml.etree.ElementTree as et
 import xml.sax.saxutils as saxutils
 import cv2
 import psutil
+import fcntl
 import random
 from PIL import Image, ImageDraw
 
@@ -244,10 +245,21 @@ def get_consol_image():
 
     binoutfile.close()
     
+# Define the path to the lock file
+LOCK_FILE = "/tmp/lock_file"
+
+# Open the lock file
+lock_file = open(LOCK_FILE, 'w')
+
+# Acquire the blocking lock
+fcntl.flock(lock_file, fcntl.LOCK_EX)
+
 while True:
-    # Wait for game launch event file to be created
+    print("Waiting for game launch event file to be created...")
     while not os.path.exists(GAME_START_FILE):
         time.sleep(0.1)
+
+    print("Game launch event file detected! Noice")
     while not os.path.exists('/tmp/retropie-oled.log'):
         time.sleep(0.1)
 
@@ -264,27 +276,32 @@ while True:
         data = open("combined.bin", "rb")
         ser.write(data.read())
         data.close()
-        ser.close()
+        print("Combined image sent to Pico on port", port)
         
         # Send boxart image to Pico
         get_boxart_image()
-        ser = serial.Serial(port, 921600)
-        ser.write(b"box\n")
         data = open("boxart.bin", "rb")
+        ser = serial.Serial(port, 921600)
         ser.write(data.read())
         data.close()
+        print("Boxart image sent to Pico on port", port)
         ser.close()
         
-        # Send consol image to Pico
+        # Send console image to Pico
         get_consol_image()
-        ser = serial.Serial(port, 921600)
-        ser.write(b"consol\n")
         data = open("consol.bin", "rb")
+        ser = serial.Serial(port, 921600)
         ser.write(data.read())
         data.close()
+        print("Console image sent to Pico on port", port)
         ser.close()
+        fcntl.flock(lock_file, fcntl.LOCK_UN)
+        lock_file.close()
+        print("Lock successfully released")
+ 
 
     # Remove the game start file
     os.remove(GAME_START_FILE)
+    print("Game launch event file removed")
     time.sleep(5)
     break
