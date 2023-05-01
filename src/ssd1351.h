@@ -13,7 +13,9 @@
 // #include "hardware/dma.h"
 #include "hardware/spi.h"
 #include "fonts.h"
+#include "hardware/flash.h"
 // #include "pico/stdio_usb.h"
+#include "hardware/sync.h"
 
 #define CS    1
 #define SCK   2
@@ -114,3 +116,5 @@ void SSD1351_set_cursor(uint8_t x, uint8_t y);
 void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]);
 
 void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]);
+
+void updateFlashData(uint8_t* flashData);

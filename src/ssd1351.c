@@ -43,15 +43,15 @@ void SSD1351_write_data_buffer(uint8_t *data, uint16_t len){
   gpio_put(CS, 1);
 }
 
-void SSD1351_update(void){
-  SSD1351_write_command(SSD1351_CMD_SETCOLUMN);
-  SSD1351_write_data(0x00);
-  SSD1351_write_data(0x7F);
-  SSD1351_write_command(SSD1351_CMD_SETROW);
-  SSD1351_write_data(0x00);
-  SSD1351_write_data(0x7F);
-  SSD1351_write_command(SSD1351_CMD_WRITERAM);
-  SSD1351_write_data_buffer(DRAM_8, DRAM_SIZE_8);
+void SSD1351_update(void){ 
+  SSD1351_write_command(SSD1351_CMD_SETCOLUMN); 
+  SSD1351_write_data(0x00); 
+  SSD1351_write_data(0x7F); 
+  SSD1351_write_command(SSD1351_CMD_SETROW); 
+  SSD1351_write_data(0x00); 
+  SSD1351_write_data(0x7F); 
+  SSD1351_write_command(SSD1351_CMD_WRITERAM); 
+  SSD1351_write_data_buffer(DRAM_8, DRAM_SIZE_8); 
 }
 
 void SSD1351_init(void){
@@ -257,11 +257,22 @@ void SSD1351_set_cursor(uint8_t x, uint8_t y){
   SSD1351_cursor.y = y;
 }
 
+// void SSD1351_write_image(void){
+//   int i = 0;
+//   while (i < DRAM_SIZE_8) {
+//     int data = getchar_timeout_us(100000);
+//     if (data != PICO_ERROR_TIMEOUT) {
+//         DRAM_8[i++] = (uint8_t)data;
+//     }
+//   }
+// }
+
+
 void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]) {
   SSD1351_clear();
   uint32_t i = 0;
-  while (i < (DRAM_SIZE_8) {
-    int data = getchar_timeout_us(10000);
+  while (i < DRAM_SIZE_8) {
+    int data = getchar_timeout_us(0);
     if (data != PICO_ERROR_TIMEOUT) {
       buf[i++] = data;
     }
@@ -273,4 +284,14 @@ void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]) {
   // spi_write_blocking(SPI_PORT, buf, OLED_BUF_SIZE);
   memcpy(DRAM_8, buf, DRAM_SIZE_8);
   SSD1351_update();
+}
+
+#define FLASH_OFFSET (1024 * 1536)
+
+void updateFlashData(uint8_t* flashData) // Update calibration data and flags
+{
+  uint Interrupt = save_and_disable_interrupts();
+  flash_range_erase((FLASH_OFFSET), ((OLED_BUF_SIZE + FLASH_SECTOR_SIZE - 1) / FLASH_SECTOR_SIZE) * FLASH_SECTOR_SIZE);
+  flash_range_program((FLASH_OFFSET), (uint8_t *)flashData, OLED_BUF_SIZE);
+  restore_interrupts(Interrupt);
 }

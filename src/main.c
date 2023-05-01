@@ -133,7 +133,6 @@ void display_stats(void) {
     SSD1351_set_cursor(5, 117);
     SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, prev_IP_addr);
 
-
     strncpy(prev_SD_usage, SD_usage, strlen(SD_usage));
     strncpy(prev_CPU_temp, CPU_temp, strlen(CPU_temp));
     strncpy(prev_CLK_speed, CLK_speed, strlen(CLK_speed));
@@ -168,7 +167,7 @@ void display_stats(void) {
 }
 
 bool receive_start_string() {
-  char start_str[] = "start\n";
+  char start_str[] = "start";
   int start_str_index = 0;
   int data;
 
@@ -184,7 +183,7 @@ bool receive_start_string() {
 }
 
 bool receive_end_string() {
-  char end_str[] = "END\n";
+  char end_str[] = "END";
   int end_str_index = 0;
   int data;
 
@@ -200,7 +199,7 @@ bool receive_end_string() {
 }
 
 bool receive_stop_string() {
-  char stop_str[] = "X\n";
+  char stop_str[] = "X";
   int stop_str_index = 0;
   int data;
 
@@ -216,7 +215,7 @@ bool receive_stop_string() {
 }
 
 bool receive_boxart_string() {
-  char boxart_str[] = "box\n";
+  char boxart_str[] = "box";
   int boxart_str_index = 0;
   int data;
 
@@ -232,7 +231,7 @@ bool receive_boxart_string() {
 }
 
 bool receive_consol_string() {
-  char consol_str[] = "consol\n";
+  char consol_str[] = "consol";
   int consol_str_index = 0;
   int data;
 
@@ -304,6 +303,8 @@ void serial_thread(void) {
           multicore_reset_core1();
           SSD1351_clear_8();
           SSD1351_get_image(combined_buffer); 
+		  SSD1351_get_image(boxart_buffer); 
+		  SSD1351_get_image(consol_buffer); 
           SSD1351_display_image(combined_buffer);
           button_thread_running = true;
           multicore_launch_core1(button_loop);
