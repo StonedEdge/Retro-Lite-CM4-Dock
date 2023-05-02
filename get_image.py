@@ -277,7 +277,8 @@ while True:
         ser.write(data.read())
         data.close()
         print("Combined image sent to Pico on port", port)
-        
+        ser.close()
+                
         # Send boxart image to Pico
         get_boxart_image()
         data = open("boxart.bin", "rb")
