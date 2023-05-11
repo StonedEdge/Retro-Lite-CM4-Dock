@@ -1,12 +1,15 @@
+#!/usr/bin/python3
+
 import serial
 import os
 import time
 import sys
 import psutil
 import socket
-import fcntl
 import subprocess
 from serial.tools import list_ports
+
+REPORT_INTERVAL = 5                     # Time between statistics updates in seconds.
 
 def get_pico_port():
     picoVID = "2E8A" # Pico USB Vendor ID
@@ -42,11 +45,7 @@ process_name = "emulationstation"
 # Status of splash video
 vid_stopped = False
 
-# Open lock file
-lock_file = open('/tmp/lock_file', 'w')
-
 while True:
-    
     get_pico_port()
     wait_for_connection()
     
@@ -55,17 +54,15 @@ while True:
     
     if connected:
         try:
-            # Acquire lock before opening serial port
-            fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            
-            ser = serial.Serial(pico_port, 921600)
+            ser = serial.Serial(pico_port, 115200)
 
             while True:
                 # Check if Emulation Station is running
                 for proc in psutil.process_iter(['name']):
                     if proc.info['name'] == process_name:
                         # Send a command to stop the video
-                        ser.write(b"X")
+                        ser.write(b"X\n")
+                        print("X sent!")
                         vid_stopped = True
                         break
                 if vid_stopped:
@@ -102,15 +99,19 @@ while True:
             ip_address = host_name
 
             ser.write(b"A" + disk_data.encode('utf-8'))
+            print("A sent!")
             ser.write(b"B" + temp.encode('utf-8'))
+            print("B sent!")
             ser.write(b"C" + clock_speed_data.encode('utf-8'))
+            print("C sent!")
             ser.write(b"D" + ram_data.encode('utf-8'))
+            print("D sent!")
             ser.write(b"E" + ip_address.encode('utf-8'))
+            print("E sent!")
+
+            time.sleep(REPORT_INTERVAL)
 
         except serial.SerialException:
             print("Pico Disconnected")
-        finally: 
-            # Release the lock after sending data
-            fcntl.flock(lock_file, fcntl.LOCK_UN)
     else:
         time.sleep(1)
