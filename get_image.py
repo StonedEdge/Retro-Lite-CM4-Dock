@@ -52,37 +52,6 @@ def get_img_directories():
 	boxart = retropie_oled_img_dir[2].rstrip('\n')
 	consol = retropie_oled_img_dir[3].rstrip('\n')
 
-def get_game_metadata():
-    tempFile = open('/tmp/retropie_oled.log', 'r', -1, "utf-8")
-    gamemetadata = tempFile.readlines()
-    tempFile.close()
-    game_name = gamemetadata[0].split('/')[-1].rsplit('.',1)[0].split('(')[0].rstrip() # Get the current game name
-    system_name = gamemetadata[0].split('/')[5] # Get the current system name
-    gamelist_path = os.path.join('/opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml')
-    data = et.parse(gamelist_path)
-    
-    # Find all the games with matching names within gamelist_path
-    game_list = data.findall(u".//game[name='{0}']".format(saxutils.escape(game_name)))
-    
-    for game in game_list:
-        if game.find('desc') is not None:
-            desc = str('Description is :\n' + game.find('desc').text)
-            
-        if game.find('') is not None:
-            rating = str('Rating:\n' + game.find('rating').text)
-            
-        if game.find('releasedate') is not None:
-            release_date = str ('Release Date:\n' + game.find('releasedate').text)
-            
-        if game.find('developer') is not None: 
-            developer = str ('Developer:\n' + game.find('developer').text)
-            
-        if game.find('publisher') is not None: 
-            publsiher = str ('Publisher:\n' + game.find('releasedate').text)
-            
-        if game.find('genre') is not None: 
-            genre = str ('Genre:\n' + game.find('genre').text)
-
 def center_crop(img,dim):
 	width, height = img.shape[1], img.shape[0]
 	crop_width = dim[0] if dim[0]<img.shape[1] else img.shape[1]
@@ -157,7 +126,7 @@ def get_combined_image():
 
                 rgb = (R<<11) | (G<<5) | B
 
-                binoutfile.write(struct.pack('H', rgb))
+                binoutfile.write(struct.pack('>H', rgb))
             else:
                 rgb = 0
 
@@ -212,7 +181,7 @@ def get_boxart_image():
 
                 rgb = (R<<11) | (G<<5) | B
 
-                binoutfile.write(struct.pack('H', rgb))
+                binoutfile.write(struct.pack('>H', rgb))
             else:
                 rgb = 0
 
@@ -270,7 +239,7 @@ def get_consol_image():
 
                 rgb = (R<<11) | (G<<5) | B
 
-                binoutfile.write(struct.pack('H', rgb))
+                binoutfile.write(struct.pack('>H', rgb))
             else:
                 rgb = 0
 
@@ -301,35 +270,30 @@ while True:
     for port in pico_ports:
         # Send combined image to Pico
         get_combined_image()
-        ser = serial.Serial(port, 921600)
-        ser.write(b"s\n")
+        ser = serial.Serial(port, 115200)
         ser.write(b"start\n")
         data = open("combined.bin", "rb")
         ser.write(data.read())
         data.close()
         print("Combined image sent to Pico on port", port)
-        ser.close()
                 
         # Send boxart image to Pico
         get_boxart_image()
         data = open("boxart.bin", "rb")
-        ser = serial.Serial(port, 921600)
         ser.write(data.read())
         data.close()
         print("Boxart image sent to Pico on port", port)
-        ser.close()
         
         # Send console image to Pico
         get_consol_image()
         data = open("consol.bin", "rb")
-        ser = serial.Serial(port, 921600)
         ser.write(data.read())
         data.close()
         print("Console image sent to Pico on port", port)
-        ser.close()
         fcntl.flock(lock_file, fcntl.LOCK_UN)
         lock_file.close()
         print("Lock successfully released")
+        ser.close()
  
 
     # Remove the game start file
