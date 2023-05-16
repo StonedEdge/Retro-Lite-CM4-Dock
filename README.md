@@ -5,31 +5,41 @@
 </p>
 
 # Description 
-Updated: 2023/04/06
+Updated: 2023/05/16
 
-Note: Currently the code will show the splashscreen & switch to show the user Pi statistics on detection of a COM port. Still a lot of bugs, wouldn't recommend using this right now. 
+Note: Code base is now functional in terms of splashscreen, statistics and initial images. 
+Please see a to-do list for list of features still required to be completed. 
 
-If a game is started by the user, Pi stats will close and show a combined binary image of the game being played. 
+-----------------------------------------------------------------------------------------------------------
 
-A basic docking station/hub designed to be used with the Retro Lite CM4 gaming console. The main features of this project include:
+The Retro Lite CM4 docking station/hub is designed to be used with the Retro Lite CM4 gaming console however will work on any generic Linux host running RetroPie. 
+The main goal of this project is to act as a metadata box for your RetroPie system/historical purposes, includin the following features:
 
 - Fully integrated 1.5" 128x128 SPI driven 16-bit color display 
-- User configurable splashscreen on power boot
-- 3 x external USB 2.0 ports to use for keyboard, mouse & other peripherals in desktop mode 
+- 3 modes, including **splashscreen**, **stats** and **game** mode
+- 3 x external USB 2.0 ports to use for keyboard, mouse & other peripherals in desktop mode. USB controller compatible for low latency
 - USB-C charging 
-- HDMI video output
-- Multifunction push button 
+- HDMI video output 
 
-Modes currently planned are: 
+Here is the general flow of the program and how it works when power is applied:
 
-1) Splashscreen until COM port detected 
-2) Pi Stats - Shows basic system hardware stats 
-3) Game metadata on boot (visuals)
-4) Game metadata on boot (text)
-5) Game statistics (play time)
+1) **Splashscreen mode**
+   - Splashscreen is played until EmulationStation starts. After which, stats mode is entered
+2) **Stats mode**
+   - Shows general system statistics - IP address, SoC temperature, RAM usage, etc. Stats are update in 5 second intervals
+   - Retro stats - see your systems overall top 5 games played by (a) duration and (b) times played 
+3) **Game mode**
+   - Shows a combined image of the game being played on launch of any game
+   - Cycle through 5 different metadata views via the push button attached to the docking station. These are: 
+         a) Combined vector image of wheel and screenshot
+         b) Official game boxart
+         c) A randomized vector image of the real hardware the game could be played on. Includes all variants of every console (continuously updated)
+         d) A small video of the gameplay of the game 
+         e) A description of the game, which scrolls vertically along the display
+         f) Other metadata, including rating, release date, developer, publisher, genre & # players
 
 # Installation
-To install, run:
+To install, run (won't currently work yet!)
 ```
 git clone https://github.com/StonedEdge/Retro-Lite-CM4-Dock.git
 sudo chmod +x install_dock.sh
@@ -38,11 +48,7 @@ sudo chmod +x install_dock.sh
 
 I recommend scraping your media files via the inbuilt scraper in the RetroPie setup script menus. This will download all of the metadata required and automatically store it in /home/pi/RetroPie/roms/{system_name}/media. 
 
-# Features
-
-- Console communicates to Pico over USB
-- Shows disk usage, SoC temp, clock speed, RAM usage & IP address of the console
-- Shows game metadata of the game/system booted, including:
+# Metadata directory locations 
 
 a) **Current game cover (boxart)** - /opt/retropie/configs/all/emulationstation/downloaded_images/{system}/{rom_name}.png
 
@@ -57,8 +63,6 @@ e) **Game developer** - /opt/retropie/configs/all/emulationstation/gamelists', s
 f) **Release date** - /opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml'
 
 g) **Videos** - /home/pi/retropie/roms/{system}/media/videos/{rom_name}.mp4
-
-h) Shows top 3 games played overall on the system, when a game is not running based on langest RetroStats: https://github.com/langest/RetroStats
 
 Example command: 
 ```-c total -b 20 -n 3 -c times```
@@ -123,18 +127,11 @@ optional arguments:
   -r, --recently_played
                         print your game history
 ```
-j) Shows battery statistics, including time-to-full, % SoC from connected MAX17055 gauge
-
-Other:
-- Integrated sleep + wake mode, blanking after 1-min of no user input 
-- 3 USB 2.0 ports for peripherals such as a keyboard, USB mouse 
-- Written in C (Pico) & Python (CM4)
-- Uses a RP2040 Pico microcontroller
 
 # Hardware 
 ![Image of Retro Lite CM4](https://i.imgur.com/LP2ecQt.png)
 
-Pinout to connect the OLED screen to the docking station is located above. Gerbers and files will be updated soon once the software is completed. 
+Pinout to connect the OLED screen to the docking station is located above. Gerbers and CAD (both docking station and separate OLED box) files will be updated soon once the software is completed. 
 
 # To-do
 - [x] Detect current game/system booted using `runcommand`
@@ -149,9 +146,9 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [x] Write a python script to scale the boxart correctly to fit the screen
 - [x] Send over random image to Pico located in consolevectors based on current system being launched on RetroPie (no scaling necessary)
 - [x] Implement a button state machine to switch between the stats and image mode
-- [ ] Write a python script to break up video into individual video frames on the Pi 4 and send over to Pico 
-- [ ] Identify how to perform hardware (or software) scrolling of text on the SSD1351 for game description 
-- [ ] Implement metadata into image mode
-- [ ] Implement "retrostats" into image mode to show user most played games by times played & time duration using the RetroStats langest script 
-- [ ] Implement a timeout which fades black to the OLED with no button input, wake up OLED on button press after 5 mins of no activity 
-- [ ] Gracefully shutdown the OLED display when the cosnole is powered down 
+- [x] Implement a timeout which fades black to the OLED with no button input. Wake up OLED on button press after X mins of no activity 
+- [ ] Write a python script to break up video into individual video frames on the Pi 4 and send over to Pico via ffmpeg 
+- [ ] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
+- [ ] Implement game metadata within game mode
+- [ ] Implement "retrostats" into stats mode to show user most played games by times played & time duration using the RetroStats langest scripts 
+- [ ] Gracefully shutdown the OLED display when the console is powered down 
