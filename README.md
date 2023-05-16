@@ -13,7 +13,7 @@ Please see a to-do list for list of features still required to be completed.
 -----------------------------------------------------------------------------------------------------------
 
 The Retro Lite CM4 docking station/hub is designed to be used with the Retro Lite CM4 gaming console however will work on any generic Linux host running RetroPie. 
-The main goal of this project is to act as a metadata box for your RetroPie system/historical purposes, includin the following features:
+The main goal of this project is to act as a metadata box for your RetroPie system/historical purposes. The project boasts the following features:
 
 - Fully integrated 1.5" 128x128 SPI driven 16-bit color display 
 - 3 modes, including **splashscreen**, **stats** and **game** mode
