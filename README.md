@@ -26,7 +26,7 @@ Here is the general flow of the program and how it works when power is applied:
 1) **Splashscreen mode**
    - Splashscreen is played until EmulationStation starts. After which, stats mode is entered
 2) **Stats mode**
-   - Shows general system statistics - IP address, SoC temperature, RAM usage, etc. Stats are update in 5 second intervals
+   - Shows general system statistics - IP address, SoC temperature, RAM usage, etc. Stats are updated in 5 second intervals
    - Retro stats - see your systems overall top 5 games played by (a) duration and (b) times played 
 3) **Game mode**
    - Shows a combined image of the game being played on launch of any game
