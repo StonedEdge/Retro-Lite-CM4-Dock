@@ -1,6 +1,6 @@
 <div align="center">
 
-## <span style="font-size:50px;">**Retro Lite CM4 AIO Docking Station**</span>
+## <span style="font-size:300px;">**Retro Lite CM4 AIO Docking Station**</span>
 
 </div>
 
