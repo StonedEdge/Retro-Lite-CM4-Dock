@@ -1,6 +1,6 @@
-<center>
+<div align="center">
 # Retro Lite CM4 AIO Docking Station
-</center>
+</div>
 
 <p align="center">
    <img src="https://i.imgur.com/RhksMgQ.jpg" width = 50% height = 50%/>
