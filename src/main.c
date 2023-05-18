@@ -1,3 +1,34 @@
+/* Main.c -- Retro-Lite CM4 Docking Station -- Main code -- bdt -- 2023-01-01
+* Copyright (c) 2023 Benjamin D. Todd.
+*
+* This is the main code that runs on a Raspberry Pi Pico.  The host is a Raspberry Pi, and
+* the host logic is largely implemented in Python.
+* 
+* License
+* =======
+* TODO
+* 
+* Revision History
+* ================
+* 
+* 2023-05-08 wmm  Restructure the serial input thread and main code so that input is handled in only a single thread.
+* 
+* 2023-05-10 wmm  Change python host code to generate .bin images use Big Endian encoding.  This way, reading the
+*                 16-bit rgb 565 values will appear in the Pico in the proper order when reading the image stream
+*                 as bytes.
+* 
+* 2023-05-15 wmm  Implement "screen blackout" after one minute of inactivity. If you are playing a game
+*                 you can exit blackout mode by pressing the utility button.  Otherwise you must start a new game.
+*                 
+*                 (If you are in statistics display mode when blackout occurs, there is no way to exit blackout mode
+*                 since this display loop does not interact with the utility button.)
+* 
+* 2023-05-16 wmm  Remove "previous statistics data" (comment out for now), and to cure the problem of pixel artifacts,
+*                 modify SSD1351_write_char() to write all pixels in the font, not just non-black pixels.
+* 
+*            wmm  When waking up from screen blackout display the current image (don't skip to next image).
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -43,6 +74,7 @@ uint32_t lastActivityTime;              // Last activity in us
 */
 
 void ButtonLoop(void) {
+    extern volatile bool displayEnabled;
     extern volatile DISPLAY_MODE displayMode;
     extern uint32_t lastActivityTime;
 
@@ -61,11 +93,12 @@ void ButtonLoop(void) {
 
                 // Button is pressed, cycle through the displays
 
-                if (++current_display > 2) {
-                    current_display = 0; // cycle back to the first display
+                if (!displayEnabled) {      // If we are waking up, use the current item number.
+                    EnableDisplay(true);
                 }
-
-                EnableDisplay(true);
+                else if (++current_display > 2) {  // Rotate through the items.
+                    current_display = 0;
+                }
 
                 switch (current_display) {
                     case 0:  // Display the combined image"
@@ -101,7 +134,7 @@ static char IP_addr[STATS_BUFFER_SIZE];     // E
 // The previous values are used so that we'll have something to init the display with on the first call when entering "X" mode.
 // TODO: This claim is a bit funky - do we really need these?
 
-#if 1
+#if 0  // 2023-05-16.  Disable.
 char prev_SD_usage[STATS_BUFFER_SIZE];      // A
 char prev_CPU_temp[STATS_BUFFER_SIZE];      // B
 char prev_CLK_speed[STATS_BUFFER_SIZE];     // C
@@ -119,12 +152,8 @@ char prev_IP_addr[STATS_BUFFER_SIZE];       // E
 */
 
 void DisplayStats(void) {
-#if 1
-    // TODO: Do we need the "prev" values??
-#endif
-
     extern char SD_usage[STATS_BUFFER_SIZE], CPU_temp[STATS_BUFFER_SIZE], CLK_speed[STATS_BUFFER_SIZE], RAM_usage[STATS_BUFFER_SIZE], IP_addr[STATS_BUFFER_SIZE];
-#if 1
+#if 0  // 2023-05-16.  Disable.
     extern char prev_SD_usage[STATS_BUFFER_SIZE], prev_CPU_tempSTATS_BUFFER_SIZE, prev_CLK_speed[STATS_BUFFER_SIZE], prev_RAM_usage[STATS_BUFFER_SIZE], prev_IP_addr[STATS_BUFFER_SIZE];
 #endif
     const int r = 255;                  // Title colour
@@ -135,10 +164,8 @@ void DisplayStats(void) {
     const int g1 = 180;
     const int b1 = 180;
 
-#if 1
+#if 0  // 2023-05-16.  Disable.
     // Clear Values
-    // NOTE WELL:  The SSD1351_write_char() function only sets non-blank pixel, hence this code.
-    // How about changing that routine to write all pixels?
 
     SSD1351_set_cursor(5, 17);
     SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, prev_SD_usage);
