@@ -2,12 +2,12 @@
 * Copyright (c) 2023 Benjamin D. Todd.
 *
 * This is the main code that runs on a Raspberry Pi Pico.  The host is a Raspberry Pi, and
-* the host logic is largely implemented in Python.
+* the host logic is largely implemented in python.
 * 
 * License
 * =======
-* TODO
-* 
+* Creative Commons Attribution Share Alike 4.0 International*
+*
 * Revision History
 * ================
 * 
@@ -26,7 +26,23 @@
 * 2023-05-16 wmm  Remove "previous statistics data" (comment out for now), and to cure the problem of pixel artifacts,
 *                 modify SSD1351_write_char() to write all pixels in the font, not just non-black pixels.
 * 
-*            wmm  When waking up from screen blackout display the current image (don't skip to next image).
+*            wmm  When waking up from screen blackout, display the current image instead of skipping to the next image.
+*
+* 2023-05-19 wmm  Added watchdog timer handling at the end of main().  Terminating main() will now reboot the processor
+*                 intead of going into an infinite breakpoint loop.
+* 
+* Power Behavior
+* ==============
+* Let's assume the charger is always plugged in to the dock at the beginning but no console is connected to start.
+*
+* (Scenario 1) In the above state, no power is delivered on VBUS. The Pico is not powered and the battery is not charging. This is because the charger only is able to deliver VBUS power if it detects a sink controller. If the console is not plugged in, no power is delivered to the Pico. The Pico is powered by a step-down DC-DC converter which steps down VBUS voltage. No console, no power to the Pico, no power to the OLED.
+* (Scenario 2) The user plugs in the console in a turned off state. Power is now delivered on VBUS and the code immediately runs as the Pico receives power. The splashscreen will loop until "NO CONNECTION" is displayed. If the console is not powered on at all, the "NO CONNECTION" display will disappear after one minute of inactivity, after which the OLED shuts off. The Pico is still waiting for the console to boot up.
+*
+* (Scenario 3) The console is in the dock now. The user turns on power to the console from an off state by holding the power button for 3 seconds. It takes about 15-20 seconds until EmulationStation process runs from a cold boot. The console will detect the process has begun and then switch over to stats mode.
+*
+* (Scenario 4) The user has enjoyed playing whatever game he wants to play and now decides its time for the console to be switched off. There's two ways he/she can do this. The first way is by navigating within the RetroPie GUI and clicking "Power down". This will leave the regulator active but the software will be off. The second way is by holding the power button for 3 seconds, after which, software shutdown will begin and then power to the regulator inside the console will be killed.
+*
+* (Scenario 5) The user decides to pull power directly from the back of the dock. In this case, the Pico does not cleanly shut down because power was immediately pulled. The console no longer charges and the OLED is now off, Pico is powered off, until the user plugs the USB-C charger back in to the dock.
 */
 
 #include <stdlib.h>
@@ -42,6 +58,7 @@
 #include "pico/multicore.h"
 #include "hardware/gpio.h"
 #include "hardware/spi.h"
+#include "hardware/watchdog.h"
 #include "ssd1351.h"
 #include "splash_vid.h"
 
@@ -68,6 +85,8 @@ typedef enum { SPLASH_SCREEN, GAME_ACTIVE, DISPLAY_STATS } DISPLAY_MODE;
 volatile DISPLAY_MODE displayMode = SPLASH_SCREEN;
 volatile bool displayEnabled = false;   // The display is actually on after initialization, but set to false for EnableDisplay.
 uint32_t lastActivityTime;              // Last activity in us
+
+int shutdownReason = 0;                 // 0=No, 1=Power off, 2=Game Engine stopped.
 
                                         /**
 * Display the various images in rotation while in "GAME_ACTIVE" mode.
@@ -356,115 +375,161 @@ void SerialThread(void) {
     extern volatile bool displayEnabled;
     extern uint32_t lastActivityTime;
     extern char SD_usage[STATS_BUFFER_SIZE], CPU_temp[STATS_BUFFER_SIZE], CLK_speed[STATS_BUFFER_SIZE], RAM_usage[STATS_BUFFER_SIZE], IP_addr[STATS_BUFFER_SIZE];
+    extern int shutdownReason;
 
     // Check if there's any serial input available
-    if (stdin) {
-        char line[STATS_BUFFER_SIZE];
+    char line[STATS_BUFFER_SIZE];
 
-        while (GetLine(line, sizeof line)) {
-            if (strcmp(line, "X") == 0) {
-                if (displayMode == SPLASH_SCREEN) {  // We've just started, show statistics now.
-                    EnableDisplayStats();
-                    EnableDisplay(true);
-                    DisplayStats();
-                }
-            }
-            else if (strcmp(line, "start") == 0) {
-                multicore_reset_core1();
-                SSD1351_clear_8();
-                SSD1351_get_image(combined_buffer);
-                SSD1351_get_image(boxart_buffer);
-                SSD1351_get_image(consol_buffer);
-                SSD1351_display_image(combined_buffer);
-                displayMode = GAME_ACTIVE;
-                multicore_launch_core1(ButtonLoop);  // ButtonLoop manages lastActivityTime
-            }
-            else if (strcmp(line, "END") == 0) {
+    while (shutdownReason == 0 && GetLine(line, sizeof line)) {
+        if (strcmp(line, "X") == 0) {
+            if (displayMode == SPLASH_SCREEN) {  // We've just started, show statistics now.
                 EnableDisplayStats();
                 EnableDisplay(true);
                 DisplayStats();
             }
-            else {
-                if (line[0] == 'A') {
-                    line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                    strcpy(SD_usage, line);
-                }
-                else if (line[0] == 'B') {
-                    line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                    strcpy(CPU_temp, line);
-                }
-                else if (line[0] == 'C') {
-                    line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                    strcpy(CLK_speed, line);
-                }
-                else if (line[0] == 'D') {
-                    line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                    strcpy(RAM_usage, line);
-                }
-                else if (line[0] == 'E') {
-                    line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                    strcpy(IP_addr, line);
+        }
+        else if (strcmp(line, "start") == 0) {
+            multicore_reset_core1();
+            SSD1351_clear_8();
+            SSD1351_get_image(combined_buffer);
+            SSD1351_get_image(boxart_buffer);
+            SSD1351_get_image(consol_buffer);
+            SSD1351_display_image(combined_buffer);
+            displayMode = GAME_ACTIVE;
+            multicore_launch_core1(ButtonLoop);  // ButtonLoop manages lastActivityTime
+        }
+        else if (strcmp(line, "END") == 0) {
+            EnableDisplayStats();
+            EnableDisplay(true);
+            DisplayStats();
+        }
+        else if (strncmp(line, "SD", 2) == 0) {  // Shutdown.
+            shutdownReason = line[2] - '0';     // Next character is the shutdown reason code.
+        }
+        else {
+            if (line[0] == 'A') {
+                line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
+                strcpy(SD_usage, line);
+            }
+            else if (line[0] == 'B') {
+                line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
+                strcpy(CPU_temp, line);
+            }
+            else if (line[0] == 'C') {
+                line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
+                strcpy(CLK_speed, line);
+            }
+            else if (line[0] == 'D') {
+                line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
+                strcpy(RAM_usage, line);
+            }
+            else if (line[0] == 'E') {
+                line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
+                strcpy(IP_addr, line);
 
-                    // This should allow the stats to be displayed after an END command, and then turn the screen off.
-                    // The only way to turn the screen back on is then to start another game.
+                // This should allow the stats to be displayed after an END command, and then turn the screen off.
+                // The only way to turn the screen back on is then to start another game.
 
-                    if (displayMode == DISPLAY_STATS) {
-                        if (displayEnabled) {
-                            uint32_t currentTime = time_us_32();
-                            if (currentTime - lastActivityTime >= INACTIVE_TIMEOUT) {
-                                EnableDisplay(false);
-                            }
+                if (displayMode == DISPLAY_STATS) {
+                    if (displayEnabled) {
+                        uint32_t currentTime = time_us_32();
+                        if (currentTime - lastActivityTime >= INACTIVE_TIMEOUT) {
+                            EnableDisplay(false);
                         }
+                    }
 
-                        if (displayEnabled) {
-                            DisplayStats();
-                        }
-                    }  // Not in stats mode, just save the data.
-                }
-            }  // Else nonsense input
-        }  // GetLine() failed - probably host went away.
-
-        clearerr(stdin);
-    }
+                    if (displayEnabled) {
+                        DisplayStats();
+                    }
+                }  // Not in stats mode, just save the data.
+            }
+        }  // Else nonsense input
+    }  // GetLine() failed - probably host went away.
 }
-
 
 int main(void)
 {
     extern volatile DISPLAY_MODE displayMode;
+    bool done = false;
+    extern int shutdownReason;
 
-    // GPIO Set-Up
+    while (!done) {
+        // GPIO Set-Up
 
-    spi_set_format(SPI_PORT, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
-    gpio_init(CS);
-    gpio_set_dir(CS, GPIO_OUT);
-    gpio_put(CS, 1);
-    gpio_set_function(SCK, GPIO_FUNC_SPI);
-    gpio_set_function(MOSI, GPIO_FUNC_SPI);
-    gpio_pull_up(SCK);
-    gpio_pull_up(MOSI);
-    gpio_init(DC);
-    gpio_set_dir(DC, GPIO_OUT);
-    gpio_init(RST);
-    gpio_set_dir(RST, GPIO_OUT);
-    gpio_init(button_pin);
-    gpio_set_dir(button_pin, GPIO_IN);
-    gpio_pull_up(button_pin);
+        // TODO: Will re-running these init calls work ok?
 
-    // SPI Initialisation
+        spi_set_format(SPI_PORT, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+        gpio_init(CS);
+        gpio_set_dir(CS, GPIO_OUT);
+        gpio_put(CS, 1);
+        gpio_set_function(SCK, GPIO_FUNC_SPI);
+        gpio_set_function(MOSI, GPIO_FUNC_SPI);
+        gpio_pull_up(SCK);
+        gpio_pull_up(MOSI);
+        gpio_init(DC);
+        gpio_set_dir(DC, GPIO_OUT);
+        gpio_init(RST);
+        gpio_set_dir(RST, GPIO_OUT);
+        gpio_init(button_pin);
+        gpio_set_dir(button_pin, GPIO_IN);
+        gpio_pull_up(button_pin);
 
-    stdio_init_all();
-    spi_init(SPI_PORT, 15000000);
-    SSD1351_init();
+        // SPI Initialisation
 
-    // Set up the video thread
+        stdio_init_all();
+        spi_init(SPI_PORT, 15000000);
+        SSD1351_init();
 
-    displayMode = SPLASH_SCREEN;
-    multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
+        if (!stdin) {  // We are screwed!
+            SSD1351_clear();
+            SSD1351_printf(SSD1351_get_rgb(255, 0, 0), small_font, "No Stdin!");
+            done = true;
+        }
+        else {
+            clearerr(stdin);
 
-    while (1) {
-        SerialThread();
+            // Set up the video thread
+
+            displayMode = SPLASH_SCREEN;
+            multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
+
+            SerialThread();
+
+            if (shutdownReason != 0) {
+                multicore_reset_core1();
+                SSD1351_clear();
+
+                // WHAT TO DO HERE?
+
+                if (shutdownReason == 1) {
+                    while (1) sleep_ms(100);  // Wait for the power to be turned off
+                }
+                else {
+                    shutdownReason = 0;             // Just restart the loop
+                }
+            }
+        }
     }
 
-    return 0;
+    /*
+    * Returning will lead you to exit(), and this can have one of two behaviors:
+    * 
+    * (1) If PICO_ENTER_USB_BOOT_ON_EXIT was set duriing build, the PICO will reboot.  This build option
+    * is off by default.
+    * 
+    * (2) If not set, you will be in an endless _breakpoint() loop.  This is pretty useless unless you are
+    * running the debugger since you will then need to power down and power up to continue.
+    * 
+    * Therefore, below we turn on the watchdog timer and enter an infinite loop.  After a moment the
+    * watchdog timer will detect the loop and reset the processor.
+    * 
+    * PRESENTLY THERE IS NO WAY TO GET HERE.  Shutdown1 waits above for power off, and Shutdown2 tries to restart
+    * the loop abov.  However, leave this code for reference.
+    */
+
+    watchdog_enable(1, 1);
+    while (1);
+
+    return 0;  // Never reached
+
 }
