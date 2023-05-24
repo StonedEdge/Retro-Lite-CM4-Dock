@@ -15,8 +15,8 @@ import subprocess
 from serial.tools import list_ports
 import RPi.GPIO as GPIO
 
-REPORT_INTERVAL = 5                         # Time between statistics updates in seconds
-SLEEP_INTERVAL = 100                        # Time between state checks
+REPORT_INTERVAL = 5                         # Time between statistics updates in seconds.
+SLEEP_INTERVAL = 0.100                      # Time between state checks in seconds.
 SHUTDOWN_PIN = 25                           # Shutdown pin.  Set by RetroLiteMonitorScript.  Active High.
 
 process_name = "emulationstation"           # Set the process name to check emulation station
@@ -69,7 +69,7 @@ lock_file = open('/tmp/lock_file', 'w')
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SHUTDOWN_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.add_event_detect(SHUTDOWN_PIN, GPIO.RISING, callback=callback, bouncetime=200)
+GPIO.add_event_detect(SHUTDOWN_PIN, GPIO.RISING, callback=shutdownPinCallback, bouncetime=200)
 
 while not done:
     wait_for_connection()
@@ -98,11 +98,11 @@ while not done:
                 fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)  # Acquire lock before opening serial port
                 haveSerialLock = True
                 ser = serial.Serial(pico_port, 921600)
-                ser.write(b"SD" + str(needShutdown) + "\n")  # Tell the Pico to shutdown with SD1 or SD2 command.
+                ser.write(b'SD' + str(needShutdown).encode('utf-8') + b"\n")  # Tell the Pico to shutdown with SD1 or SD2 command.
             elif processIsRunning:
                 processWasRunning = True                # Now we can determine if the process went away
 
-                if lastStatsTime - now > REPORT_INTERVAL:
+                if now - lastStatsTime >= REPORT_INTERVAL:
                     fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)  # Acquire lock before opening serial port
                     haveSerialLock = True
                     ser = serial.Serial(pico_port, 921600)
@@ -136,7 +136,7 @@ while not done:
                     ip_address = host_name
 
                     ser.write(b"A" + disk_data.encode('utf-8') + b"\n")
-                    ser.write(b"B" + temp.encode('utf-8'))
+                    ser.write(b"B" + temp.encode('utf-8') + b"\n")
                     ser.write(b"C" + clock_speed_data.encode('utf-8') + b"\n")
                     ser.write(b"D" + ram_data.encode('utf-8') + b"\n")
                     ser.write(b"E" + ip_address.encode('utf-8') + b"\n")
@@ -151,11 +151,10 @@ while not done:
 
             if needShutdown != 0:
                 if needShutdown == 1:
-                    done = true
+                    done = True
                 else:                       # Basically, just restart the loop
                     needShutdown = 0
         time.sleep(SLEEP_INTERVAL)
-
 
 lock_file.close()
 GPIO.cleanup()
