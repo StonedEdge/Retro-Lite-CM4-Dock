@@ -1,3 +1,14 @@
+/* ssd1351.c -- Retro-Lite CM4 Docking Station -- Display code -- bdt -- 2023-01-01
+* Copyright (c) 2023 Benjamin D. Todd.
+*
+* This is a library to handle the SSD1351 OLED display.
+* 
+* License
+* =======
+* Creative Commons Attribution Share Alike 4.0 International*
+*
+*/
+
 #include "ssd1351.h"
 
 /* Buffer to hold the Display RAM Data */
@@ -174,7 +185,7 @@ void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color) {
 }
 
 static void SSD1351_write_char(uint16_t color, font_t font, char c) {
-    uint16_t fd;
+    // unused now: uint16_t fd;
     if ((COLUMNS <= SSD1351_cursor.x + font.width) || (ROWS <= SSD1351_cursor.y + font.height)) {
         return;
     }
@@ -183,7 +194,7 @@ static void SSD1351_write_char(uint16_t color, font_t font, char c) {
     }
     else {
         for (int i = 0; i < font.height; i++) {
-            fd = font.data[(c - 32) * font.height + i];
+            // unused now: fd = font.data[(c - 32) * font.height + i];
             for (int j = 0; j < font.width; j++) {
 #if 0  // 2023-05-16.  This only writes non-black pixels.
                 if ((fd << j) & 0x8000) {
@@ -292,7 +303,7 @@ void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]) {
 
 #define FLASH_OFFSET (1024 * 1536)
 
-void updateFlashData(uint8_t* flashData) // Update calibration data and flags //Used to dump 32kb of memory later in the program for debug purposes. 
+void updateFlashData(uint8_t* flashData) // Update calibration data and flags
 {
     uint Interrupt = save_and_disable_interrupts();
     flash_range_erase((FLASH_OFFSET), ((OLED_BUF_SIZE + FLASH_SECTOR_SIZE - 1) / FLASH_SECTOR_SIZE) * FLASH_SECTOR_SIZE);
