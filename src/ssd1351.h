@@ -79,13 +79,13 @@ typedef union DisplayRAM{
 
 void SSD1351_SendByte(uint8_t data);
 
-void SSD1351_SendBuffer(uint8_t *buffer, uint16_t len);
+void SSD1351_SendBuffer(const uint8_t *buffer, uint16_t len);
 
 void SSD1351_write_command(uint8_t cmd);
 
 void SSD1351_write_data(uint8_t data);
 
-void SSD1351_write_data_buffer(uint8_t *data, uint16_t len);
+void SSD1351_write_data_buffer(const uint8_t *data, uint16_t len);
 
 void SSD1351_update(void);
 
