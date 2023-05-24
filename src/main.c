@@ -6,7 +6,7 @@
 * 
 * License
 * =======
-* MIT License *
+* Creative Commons Attribution Share Alike 4.0 International*
 *
 * Revision History
 * ================
@@ -121,15 +121,15 @@ void ButtonLoop(void) {
 
                 switch (current_display) {
                     case 0:  // Display the combined image"
-                        SSD1351_clear_8();
+                        SSD1351_clear();
                         SSD1351_display_image(combined_buffer);
                         break;
                     case 1:  // Display the boxart image
-                        SSD1351_clear_8();
+                        SSD1351_clear();
                         SSD1351_display_image(boxart_buffer);
                         break;
-                    case 2:  // Display the consol image
-                        SSD1351_clear_8();
+                    case 2:  // Display the console image
+                        SSD1351_clear();
                         SSD1351_display_image(consol_buffer);
                         break;
                 }
@@ -275,7 +275,7 @@ void EnableDisplayStats()
     displayMode = DISPLAY_STATS;
 
     multicore_reset_core1();
-    SSD1351_clear_8();
+    SSD1351_clear();
     SSD1351_update();
 }
 
@@ -390,7 +390,7 @@ void SerialThread(void) {
         }
         else if (strcmp(line, "start") == 0) {
             multicore_reset_core1();
-            SSD1351_clear_8();
+            SSD1351_clear();
             SSD1351_get_image(combined_buffer);
             SSD1351_get_image(boxart_buffer);
             SSD1351_get_image(consol_buffer);
@@ -451,6 +451,7 @@ int main(void)
 {
     extern volatile DISPLAY_MODE displayMode;
     bool done = false;
+    bool firstGame = true;
     extern int shutdownReason;
 
     while (!done) {
@@ -490,24 +491,36 @@ int main(void)
 
             // Set up the video thread
 
-            displayMode = SPLASH_SCREEN;
-            multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
+            if (firstGame) {
+                displayMode = SPLASH_SCREEN;
+                multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
+            }
+            else {
+                // Display is probably empty at the moment.  Show whatever stats we previous
+                // collected.
+
+                EnableDisplayStats();
+                EnableDisplay(true);
+            }
 
             SerialThread();
 
             if (shutdownReason != 0) {
                 multicore_reset_core1();
                 SSD1351_clear();
+                SSD1351_update();
 
                 // WHAT TO DO HERE?
 
                 if (shutdownReason == 1) {
-                    while (1) sleep_ms(100);  // Wait for the power to be turned off
+                    // Wait for the power to be turned off
+                    EnableDisplay(false);   // Display OFF
+                    while (true) sleep_ms(100);
                 }
                 else {
                     shutdownReason = 0;             // Just restart the loop
                 }
-            }
+            }  // Otherwise we probably got here because of an I/O error.  Hopefully re-init will fix it.
         }
     }
 
@@ -531,5 +544,4 @@ int main(void)
     while (1);
 
     return 0;  // Never reached
-
 }
