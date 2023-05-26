@@ -31,8 +31,3 @@ echo "$HOME/RetroPie/roms/$1/media/wheel/${rom_bn}.png" >> /tmp/retropie-oled.lo
 echo "/opt/retropie/configs/all/emulationstation/downloaded_images/${system}/${rom_bn}-image.png" >> /tmp/retropie-oled.log
 echo "$HOME/RetroliteOSD/consolevectors/${system}" >> /tmp/retropie-oled.log
 echo $(date -u +%Y-%m-%dT%H:%M:%S%z)'|'start'|'$1'|'$2'|'$3'|'$4 >> ~/RetroPie/game_stats.log
-
-
-
-
-
