@@ -1,3 +1,4 @@
+
 /* Main.c -- Retro-Lite CM4 Docking Station -- Main code -- bdt -- 2023-01-01
 * Copyright (c) 2023 Benjamin D. Todd.
 *
@@ -30,12 +31,16 @@
 *
 * 2023-05-19 wmm  Added watchdog timer handling at the end of main().  Terminating main() will now reboot the processor
 *                 intead of going into an infinite breakpoint loop.
+*
+* 2023-05-27 wmm  Fixed SSD1351_write_char -- It was setting all pixels, not just "non-empty" pixels.
 * 
 * Power Behavior
 * ==============
++ TODO: Review these comments - do they all still apply?  2023-05-27.
 * Let's assume the charger is always plugged in to the dock at the beginning but no console is connected to start.
 *
 * (Scenario 1) In the above state, no power is delivered on VBUS. The Pico is not powered and the battery is not charging. This is because the charger only is able to deliver VBUS power if it detects a sink controller. If the console is not plugged in, no power is delivered to the Pico. The Pico is powered by a step-down DC-DC converter which steps down VBUS voltage. No console, no power to the Pico, no power to the OLED.
+*
 * (Scenario 2) The user plugs in the console in a turned off state. Power is now delivered on VBUS and the code immediately runs as the Pico receives power. The splashscreen will loop until "NO CONNECTION" is displayed. If the console is not powered on at all, the "NO CONNECTION" display will disappear after one minute of inactivity, after which the OLED shuts off. The Pico is still waiting for the console to boot up.
 *
 * (Scenario 3) The console is in the dock now. The user turns on power to the console from an off state by holding the power button for 3 seconds. It takes about 15-20 seconds until EmulationStation process runs from a cold boot. The console will detect the process has begun and then switch over to stats mode.
@@ -62,10 +67,10 @@
 #include "ssd1351.h"
 #include "splash_vid.h"
 
+#define BUTTON_PIN 6
+#define DEBOUNCE_TIME_MS 100
 #define IMAGE_SIZE_BYTES 32768
 #define INACTIVE_TIMEOUT 60 * 1000000
-#define button_pin 6
-#define debounce_time_ms 100
 
 // The worst case for an uncomporessed IPV6 address would be 8 4-digit segments plus 7 colon separators + null, or 40 chars.
 // I've reserved 64 characters just in case, although that would never fit in the tiny display.
@@ -81,7 +86,7 @@ uint8_t consol_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 void EnableDisplay(bool enable);
 bool GetLine(char* line, int lineSize);
 
-typedef enum { SPLASH_SCREEN, GAME_ACTIVE, DISPLAY_STATS } DISPLAY_MODE;
+typedef enum { SPLASH_SCREEN, GAME_ACTIVE, DISPLAY_STATS, DISPLAY_BLANKED } DISPLAY_MODE;
 volatile DISPLAY_MODE displayMode = SPLASH_SCREEN;
 volatile bool displayEnabled = false;   // The display is actually on after initialization, but set to false for EnableDisplay.
 uint32_t lastActivityTime;              // Last activity in us
@@ -103,11 +108,11 @@ void ButtonLoop(void) {
     uint32_t last_press_time = 0;
 
     while (displayMode == GAME_ACTIVE) {
-        if (!gpio_get(button_pin)) {
+        if (!gpio_get(BUTTON_PIN)) {
             uint32_t currentTime = time_us_32();
             lastActivityTime = currentTime;
 
-            if (currentTime - last_press_time >= debounce_time_ms * 1000) {
+            if (currentTime - last_press_time >= DEBOUNCE_TIME_MS * 1000) {
                 last_press_time = currentTime;
 
                 // Button is pressed, cycle through the displays
@@ -121,15 +126,15 @@ void ButtonLoop(void) {
 
                 switch (current_display) {
                     case 0:  // Display the combined image"
-                        SSD1351_clear();
+                        SSD1351_clear_8();
                         SSD1351_display_image(combined_buffer);
                         break;
                     case 1:  // Display the boxart image
-                        SSD1351_clear();
+                        SSD1351_clear_8();
                         SSD1351_display_image(boxart_buffer);
                         break;
                     case 2:  // Display the console image
-                        SSD1351_clear();
+                        SSD1351_clear_8();
                         SSD1351_display_image(consol_buffer);
                         break;
                 }
@@ -245,6 +250,7 @@ void EnableDisplay(bool enable)
     if (displayEnabled != enable) {
         displayEnabled = enable;
 
+#if 0 // DISABLE THIS CODE UNTIL CURRENT FUNKY FONT ISSUE IS SOLVED.  2023-05-28
         if (enable) {
             SSD1351_write_command(SSD1351_CMD_FUNCTIONSELECT);  // Enable Vdd voltage regulator
             SSD1351_write_data(0x01);
@@ -257,6 +263,7 @@ void EnableDisplay(bool enable)
             SSD1351_write_command(SSD1351_CMD_FUNCTIONSELECT);  // Disable Vdd voltage regulator to save power
             SSD1351_write_data(0x00);
         }
+#endif
     }
 
     if (enable) {  // Reset the last activity time elsewhere we can determine inactivity.
@@ -275,7 +282,7 @@ void EnableDisplayStats()
     displayMode = DISPLAY_STATS;
 
     multicore_reset_core1();
-    SSD1351_clear();
+    SSD1351_clear_8();
     SSD1351_update();
 }
 
@@ -387,10 +394,15 @@ void SerialThread(void) {
                 EnableDisplay(true);
                 DisplayStats();
             }
+            else if (displayMode == DISPLAY_BLANKED) {  // This is the same as the SPLASH_SCREEN case -- at le
+                EnableDisplayStats();
+                EnableDisplay(true);
+                DisplayStats();
+            }
         }
         else if (strcmp(line, "start") == 0) {
             multicore_reset_core1();
-            SSD1351_clear();
+            SSD1351_clear_8();
             SSD1351_get_image(combined_buffer);
             SSD1351_get_image(boxart_buffer);
             SSD1351_get_image(consol_buffer);
@@ -471,9 +483,9 @@ int main(void)
         gpio_set_dir(DC, GPIO_OUT);
         gpio_init(RST);
         gpio_set_dir(RST, GPIO_OUT);
-        gpio_init(button_pin);
-        gpio_set_dir(button_pin, GPIO_IN);
-        gpio_pull_up(button_pin);
+        gpio_init(BUTTON_PIN);
+        gpio_set_dir(BUTTON_PIN, GPIO_IN);
+        gpio_pull_up(BUTTON_PIN);
 
         // SPI Initialisation
 
@@ -481,9 +493,35 @@ int main(void)
         spi_init(SPI_PORT, 15000000);
         SSD1351_init();
 
+#i 0  // Simple dislay test
+    for (int i = 0; i < 20; i++) {
+#if 0
+        SSD1351_fill(SSD1351_get_rgb(255, 0, 0));
+        SSD1351_update();
+        sleep_ms(500);
+
+        SSD1351_fill(SSD1351_get_rgb(0, 255, 0));
+        SSD1351_update();
+        sleep_ms(500);
+
+        SSD1351_fill(SSD1351_get_rgb(0, 0, 255));
+        SSD1351_update();
+        sleep_ms(500);
+#endif
+
+        SSD1351_fill(SSD1351_get_rgb(255,255,255));
+        SSD1351_update();
+        sleep_ms(500);
+    }
+    SSD1351_set_cursor(5, 5);
+    SSD1351_printf(SSD1351_get_rgb(255, 0, 0), small_font, "You Are Here");
+    SSD1351_update();
+    sleep_ms(5000);
+#endif
         if (!stdin) {  // We are screwed!
-            SSD1351_clear();
+            SSD1351_clear_8();
             SSD1351_printf(SSD1351_get_rgb(255, 0, 0), small_font, "No Stdin!");
+            SSD1351_update();
             done = true;
         }
         else {
@@ -494,28 +532,29 @@ int main(void)
             if (firstGame) {
                 displayMode = SPLASH_SCREEN;
                 multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
+                firstGame = false;
             }
             else {
-                // Display is probably empty at the moment.  Show whatever stats we previous
-                // collected.
-
-                EnableDisplayStats();
-                EnableDisplay(true);
+                displayMode = DISPLAY_BLANKED;  // Don't do anything until we get an 'X' command.
             }
 
             SerialThread();
 
             if (shutdownReason != 0) {
                 multicore_reset_core1();
-                SSD1351_clear();
+                SSD1351_clear_8();
                 SSD1351_update();
 
-                // WHAT TO DO HERE?
-
                 if (shutdownReason == 1) {
-                    // Wait for the power to be turned off
-                    EnableDisplay(false);   // Display OFF
-                    while (true) sleep_ms(100);
+                    // The Pico gets power from the VBUS, so there is always power unless you unplug the
+                    // docking station from the all.
+                    // 
+                    // We could go into dormant mode here to save power, but to exit dormant mode we would
+                    // need a pin to trigger wakeup, which we do not have.
+                    // 
+                    // Therefore, treat the power down event just like the emulator exit even.
+
+                    shutdownReason = 0;
                 }
                 else {
                     shutdownReason = 0;             // Just restart the loop
