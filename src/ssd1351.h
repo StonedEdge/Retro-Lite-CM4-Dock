@@ -35,9 +35,9 @@
 #define DRAM_SIZE_8 32768
 #define DRAM_SIZE_16 16384
 
-typedef union DisplayRAM{
-  uint8_t byte[DRAM_SIZE_8];
-  uint16_t halfw[DRAM_SIZE_16];
+typedef union DisplayRAM {
+    uint8_t byte[DRAM_SIZE_8];
+    uint16_t halfw[DRAM_SIZE_16];
 } DRAM;
 
 // SSD1351 Commands
@@ -79,13 +79,13 @@ typedef union DisplayRAM{
 
 void SSD1351_SendByte(uint8_t data);
 
-void SSD1351_SendBuffer(const uint8_t *buffer, uint16_t len);
+void SSD1351_SendBuffer(const uint8_t* buffer, uint16_t len);
 
 void SSD1351_write_command(uint8_t cmd);
 
 void SSD1351_write_data(uint8_t data);
 
-void SSD1351_write_data_buffer(const uint8_t *data, uint16_t len);
+void SSD1351_write_data_buffer(const uint8_t* data, uint16_t len);
 
 void SSD1351_update(void);
 
@@ -105,11 +105,11 @@ void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color);
 
 static void SSD1351_write_char(uint16_t color, font_t font, char c);
 
-static void SSD1351_write_string(uint16_t color, font_t font, char *line);
+static void SSD1351_write_string(uint16_t color, font_t font, char* line);
 
 static void SSD1351_write_int(uint16_t color, font_t font, int8_t n);
 
-void SSD1351_printf(uint16_t color, font_t font, const char *format, ...);
+void SSD1351_printf(uint16_t color, font_t font, const char* format, ...);
 
 void SSD1351_set_cursor(uint8_t x, uint8_t y);
 
