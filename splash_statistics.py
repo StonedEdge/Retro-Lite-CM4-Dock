@@ -91,13 +91,15 @@ while not done:
                     break
 
             if not processIsRunning:
-                if processWasRunning and needShutdown == 0:  # Process went away!
-                    needShutdown = 2
+                if processWasRunning:           # Process went away!
+                    if needShutdown == 0:
+                        needShutdown = 2
+                    processWasRunning = False
 
             if needShutdown != 0:
                 fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)  # Acquire lock before opening serial port
                 haveSerialLock = True
-                ser = serial.Serial(pico_port, 115200)
+                ser = serial.Serial(pico_port, 921600)
                 ser.write(b'SD' + str(needShutdown).encode('utf-8') + b"\n")  # Tell the Pico to shutdown with SD1 or SD2 command.
             elif processIsRunning:
                 processWasRunning = True                # Now we can determine if the process went away
@@ -105,7 +107,7 @@ while not done:
                 if now - lastStatsTime >= REPORT_INTERVAL:
                     fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)  # Acquire lock before opening serial port
                     haveSerialLock = True
-                    ser = serial.Serial(pico_port, 115200)
+                    ser = serial.Serial(pico_port, 921600)
                     ser.write(b"X\n")  # This will stop the splash screen if necessary
 
                     # SD Usage
@@ -142,6 +144,8 @@ while not done:
                     ser.write(b"E" + ip_address.encode('utf-8') + b"\n")
 
                     lastStatsTime = now
+        except OSError as error:
+            print(error)
         except serial.SerialException:
             print("Pico Disconnected")
         finally: 
