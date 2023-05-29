@@ -11,7 +11,11 @@
 
 #include "ssd1351.h"
 
-/* Buffer to hold the Display RAM Data */
+/* Buffer to hold the Display RAM Data.
+* 
+* You must call SSD1351_update() to transfer the buffer to the real display memory.
+*/
+
 static DRAM displayRAM;
 
 #define DRAM_16 displayRAM.halfw
@@ -148,6 +152,7 @@ void SSD1351_clear_8(void) {
 }
 
 void SSD1351_fill(uint16_t color) {
+// TODO: IS THIS OK?  Need to swap bytes?
     for (int i = 0; i < DRAM_SIZE_16; i++) {
         DRAM_16[i] = color;
     }
@@ -184,8 +189,22 @@ void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color) {
     DRAM_16[a] = color;
 }
 
+/**
+* Write a single character.
+* 
+* This previously wrote only "non-empty" pixels.  However, that would leave
+* artifacts from previous output on the screen.  fTherefore, a screen clear was
+* always required.
+* 
+* This version sets all pixels, but the background will be black.
+* 
+* If you really need a different background color you can add that as a new parameter.
+* 
+* Note that the maximum font width is 16 pixels.
+*/
+
+#if 1  // NEW CODE
 static void SSD1351_write_char(uint16_t color, font_t font, char c) {
-    // unused now: uint16_t fd;
     if ((COLUMNS <= SSD1351_cursor.x + font.width) || (ROWS <= SSD1351_cursor.y + font.height)) {
         return;
     }
@@ -194,15 +213,41 @@ static void SSD1351_write_char(uint16_t color, font_t font, char c) {
     }
     else {
         for (int i = 0; i < font.height; i++) {
-            // unused now: fd = font.data[(c - 32) * font.height + i];
+            uint16_t fd = font.data[(c - 32) * font.height + i];
+            uint16_t pixMask = 0x8000;
+
             for (int j = 0; j < font.width; j++) {
-#if 0  // 2023-05-16.  This only writes non-black pixels.
+                uint16_t pixcolor = (fd & pixMask) != 0 ? color : COLOR_BLACK;
+                pixMask >>= 1;
+                SSD1351_write_pixel(SSD1351_cursor.x + j, SSD1351_cursor.y + i, pixcolor);
+
+            }
+        }
+    }
+
+    SSD1351_cursor.x += font.width;
+    if ((SSD1351_cursor.x + font.width >= 127) & (SSD1351_cursor.y + font.height <= 127)) {
+        SSD1351_cursor.y = SSD1351_cursor.y + font.height + 2;
+        SSD1351_cursor.x = 0;
+    }
+    return;
+}
+#else // OLD CODE
+static void SSD1351_write_char(uint16_t color, font_t font, char c) {
+    uint16_t fd;
+    if ((COLUMNS <= SSD1351_cursor.x + font.width) || (ROWS <= SSD1351_cursor.y + font.height)) {
+        return;
+    }
+    if (c == '\n') {
+        SSD1351_cursor.x = 127;
+    }
+    else {
+        for (int i = 0; i < font.height; i++) {
+            fd = font.data[(c - 32) * font.height + i];
+            for (int j = 0; j < font.width; j++) {
                 if ((fd << j) & 0x8000) {
                     SSD1351_write_pixel(SSD1351_cursor.x + j, SSD1351_cursor.y + i, color);
                 }
-#else  // Write all pixels so there are no artifacts.
-                SSD1351_write_pixel(SSD1351_cursor.x + j, SSD1351_cursor.y + i, color);
-#endif
             }
         }
     }
@@ -213,14 +258,14 @@ static void SSD1351_write_char(uint16_t color, font_t font, char c) {
     }
     return;
 }
+#endif
 
 static void SSD1351_write_string(uint16_t color, font_t font, char* line) {
-    if (line == NULL) {
-        return;
-    }
-    while (*line != 0) {
-        SSD1351_write_char(color, font, *line);
-        line++;
+    if (line != NULL) {
+        while (*line != 0) {
+            SSD1351_write_char(color, font, *line);
+            line++;
+        }
     }
 }
 
@@ -237,32 +282,31 @@ static void SSD1351_write_int(uint16_t color, font_t font, int8_t n) {
  * @param format: formatted string
  */
 void SSD1351_printf(uint16_t color, font_t font, const char* format, ...) {
-    if (format == NULL) {
-        return;
-    }
-    va_list valist;
-    va_start(valist, format);
-    while (*format != 0) {
-        if (*format != '%') {
-            SSD1351_write_char(color, font, *format);
-            format++;
-        }
-        else {
-            format++;
-            switch (*format) {
-                case 's':
-                    SSD1351_write_string(color, font, va_arg(valist, char*));
-                    break;
-                case 'c':
-                    SSD1351_write_char(color, font, va_arg(valist, int)); //?
-                    break;
-                case 'i':
-                    SSD1351_write_int(color, font, (int8_t)va_arg(valist, int));
-                    break;
-                default:
-                    break;
+    if (format != NULL) {
+        va_list valist;
+        va_start(valist, format);
+        while (*format != 0) {
+            if (*format != '%') {
+                SSD1351_write_char(color, font, *format);
+                format++;
             }
-            format++;
+            else {
+                format++;
+                switch (*format) {
+                    case 's':
+                        SSD1351_write_string(color, font, va_arg(valist, char*));
+                        break;
+                    case 'c':
+                        SSD1351_write_char(color, font, va_arg(valist, int)); //?
+                        break;
+                    case 'i':
+                        SSD1351_write_int(color, font, (int8_t)va_arg(valist, int));
+                        break;
+                    default:
+                        break;
+                }
+                format++;
+            }
         }
     }
 }
