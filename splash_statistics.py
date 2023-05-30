@@ -4,20 +4,20 @@
 # This routine sends statistics data to the Pico every five seconds.  It also monitors for the power down situation
 # as well as startup/shutdown of the game emulator.
 
-import serial
+import fcntl
 import os
-import time
+import serial
 import sys
+import time
 import psutil
 import socket
-import fcntl
 import subprocess
 from serial.tools import list_ports
 import RPi.GPIO as GPIO
 
 REPORT_INTERVAL = 5                         # Time between statistics updates in seconds.
 SLEEP_INTERVAL = 0.100                      # Time between state checks in seconds.
-SHUTDOWN_PIN = 25                           # Shutdown pin.  Set by RetroLiteMonitorScript.  Active High.
+SHUTDOWN_PIN = 25                           # Shutdown pin.  Set by RetroLiteMonitorScript.  Active High on shutdown. 
 
 process_name = "emulationstation"           # Set the process name to check emulation station
 
@@ -28,6 +28,9 @@ needShutdown = 0                            # 0=No, 1=Powering down, 2=Shutdown 
 needStats = True
 processWasRunning = False                   # Used so we can detect that the game emulator was stopped
 
+# Open lock file
+
+lock_file = open('/tmp/lock_file', 'w')
 
 def check_connection(port):
     if port is None:
@@ -36,7 +39,7 @@ def check_connection(port):
 
 def get_pico_port():
     picoVID = "2E8A" # Pico USB Vendor ID
-    picoPID = "000A" # Pico USB product ID
+    picoPID = "000A" # Pico USB product ID\
     port_list = serial.tools.list_ports.comports()
 
     for device in port_list:
@@ -46,6 +49,33 @@ def get_pico_port():
                 return device.device
 
     return None
+
+# Free the Serial Lock
+
+def FreeLock():
+    global haveSerialLock
+
+    if haveSerialLock:
+        fcntl.flock(lock_file, fcntl.LOCK_UN)
+        haveSerialLock = False
+
+# Get the I/O lock, non-blocking.
+#
+# @return Sets and returns haveSerialLock.  The value will be True if
+# locking was successful.
+
+def GetLock():
+    global haveSerialLock
+
+    haveSerialLock = False
+
+    try:
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)  # Acquire lock before opening serial port
+        haveSerialLock = True
+    except BlockingIOError as error:
+        print(error)
+
+    return haveSerialLock;
 
 def shutdownPinCallback(channel):
     global needShutdown
@@ -60,10 +90,6 @@ def wait_for_connection():
         if connection is None:
             time.sleep(10)
             print("Pico not connected")
-
-# Open lock file
-
-lock_file = open('/tmp/lock_file', 'w')
 
 # Set up GPIO
 
@@ -97,16 +123,19 @@ while not done:
                     processWasRunning = False
 
             if needShutdown != 0:
-                fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)  # Acquire lock before opening serial port
-                haveSerialLock = True
-                ser = serial.Serial(pico_port, 921600)
-                ser.write(b'SD' + str(needShutdown).encode('utf-8') + b"\n")  # Tell the Pico to shutdown with SD1 or SD2 command.
+                if GetLock():
+                    ser = serial.Serial(pico_port, 921600)
+                    ser.write(b'SD' + str(needShutdown).encode('utf-8') + b"\n")  # Tell the Pico to shutdown with SD1 or SD2 command.
+                    ser.close()
+
+                    if needShutdown == 1:
+                        done = True
+                    else:                               # Basically, just restart the loop
+                        needShutdown = 0
             elif processIsRunning:
                 processWasRunning = True                # Now we can determine if the process went away
 
-                if now - lastStatsTime >= REPORT_INTERVAL:
-                    fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)  # Acquire lock before opening serial port
-                    haveSerialLock = True
+                if now - lastStatsTime >= REPORT_INTERVAL and GetLock():
                     ser = serial.Serial(pico_port, 921600)
                     ser.write(b"X\n")  # This will stop the splash screen if necessary
 
@@ -143,23 +172,15 @@ while not done:
                     ser.write(b"D" + ram_data.encode('utf-8') + b"\n")
                     ser.write(b"E" + ip_address.encode('utf-8') + b"\n")
 
+                    ser.close();
                     lastStatsTime = now
-        except OSError as error:
+        except Exception as error:
             print(error)
-        except serial.SerialException:
-            print("Pico Disconnected")
-        finally: 
-            if haveSerialLock:              # Release the lock after sending data
-                fcntl.flock(lock_file, fcntl.LOCK_UN)
-                haveSerialLock = False
+        finally:
+            FreeLock()
 
-            if needShutdown != 0:
-                if needShutdown == 1:
-                    done = True
-                else:                       # Basically, just restart the loop
-                    needShutdown = 0
         time.sleep(SLEEP_INTERVAL)
 
 lock_file.close()
 GPIO.cleanup()
-sys.exit(needShutdown)  # Exit code is 0, 1, or 2
+sys.exit(needShutdown)  # Exit code can only currently be 1 (shutdown via power button). or 1.  2 is game end, and doesn't terminate the loop.
