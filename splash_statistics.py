@@ -174,6 +174,7 @@ while not done:
 
                     ser.close();
                     lastStatsTime = now
+                    
         except Exception as error:
             print(error)
         finally:
