@@ -124,7 +124,7 @@ while not done:
 
             if needShutdown != 0:
                 if GetLock():
-                    ser = serial.Serial(pico_port, 921600)
+                    ser = serial.Serial(pico_port, 115200)
                     ser.write(b'SD' + str(needShutdown).encode('utf-8') + b"\n")  # Tell the Pico to shutdown with SD1 or SD2 command.
                     ser.close()
 
@@ -136,7 +136,7 @@ while not done:
                 processWasRunning = True                # Now we can determine if the process went away
 
                 if now - lastStatsTime >= REPORT_INTERVAL and GetLock():
-                    ser = serial.Serial(pico_port, 921600)
+                    ser = serial.Serial(pico_port, 115200)
                     ser.write(b"X\n")  # This will stop the splash screen if necessary
 
                     # SD Usage
@@ -172,7 +172,7 @@ while not done:
                     ser.write(b"D" + ram_data.encode('utf-8') + b"\n")
                     ser.write(b"E" + ip_address.encode('utf-8') + b"\n")
 
-                    ser.close();
+                    ser.close()
                     lastStatsTime = now
                     
         except Exception as error:
