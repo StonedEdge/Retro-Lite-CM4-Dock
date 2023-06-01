@@ -34,6 +34,10 @@
 *
 * 2023-05-27 wmm  Fixed SSD1351_write_char -- It was setting all pixels, not just "non-empty" pixels.
 * 
+* 2023-05-31 wmm  Added "sudo" to python3 command in runcommand-onend.sh.
+* 
+* 2023-06-01 wmm  Restructured main() so it does initialization only once.
+* 
 * Power Behavior
 * ==============
 + TODO: Review these comments - do they all still apply?  2023-05-27.
@@ -41,11 +45,16 @@
 *
 * (Scenario 1) In the above state, no power is delivered on VBUS. The Pico is not powered and the battery is not charging. This is because the charger only is able to deliver VBUS power if it detects a sink controller. If the console is not plugged in, no power is delivered to the Pico. The Pico is powered by a step-down DC-DC converter which steps down VBUS voltage. No console, no power to the Pico, no power to the OLED.
 *
-* (Scenario 2) The user plugs in the console in a turned off state. Power is now delivered on VBUS and the code immediately runs as the Pico receives power. The splashscreen will loop until "NO CONNECTION" is displayed. If the console is not powered on at all, the "NO CONNECTION" display will disappear after one minute of inactivity, after which the OLED shuts off. The Pico is still waiting for the console to boot up.
+* (Scenario 2) The user plugs in the console in a turned off state. Power is now delivered on VBUS and the code immediately runs as the Pico receives power. 
+* The splashscreen will loop for approximately 30 seconds, and then display "NO CONNECTION".  If no connection is established after about one minute,
+* the OLED shuts off.
 *
-* (Scenario 3) The console is in the dock now. The user turns on power to the console from an off state by holding the power button for 3 seconds. It takes about 15-20 seconds until EmulationStation process runs from a cold boot. The console will detect the process has begun and then switch over to stats mode.
+* (Scenario 3) The console is in the dock now. The user turns on power to the console from an off state by holding the power button for 3 seconds.
+* It takes about 15-20 seconds until EmulationStation process runs from a cold boot. The console will detect the process has begun and then switch over to stats mode.
 *
-* (Scenario 4) The user has enjoyed playing whatever game he wants to play and now decides its time for the console to be switched off. There's two ways he/she can do this. The first way is by navigating within the RetroPie GUI and clicking "Power down". This will leave the regulator active but the software will be off. The second way is by holding the power button for 3 seconds, after which, software shutdown will begin and then power to the regulator inside the console will be killed.
+* (Scenario 4) The user has enjoyed playing whatever game he wants to play and now decides its time for the console to be switched off. There's two ways he/she can do this. 
+* The first way is by navigating within the RetroPie GUI and clicking "Power down". This will leave the regulator active but the software will be off. The second way is by holding 
+* the power button for 3 seconds, after which a software shutdown will begin and then power to the regulator inside the console will be killed.
 *
 * (Scenario 5) The user decides to pull power directly from the back of the dock. In this case, the Pico does not cleanly shut down because power was immediately pulled. The console no longer charges and the OLED is now off, Pico is powered off, until the user plugs the USB-C charger back in to the dock.
 */
@@ -250,7 +259,7 @@ void EnableDisplay(bool enable)
     if (displayEnabled != enable) {
         displayEnabled = enable;
 
-#if 0 // DISABLE THIS CODE UNTIL CURRENT FUNKY FONT ISSUE IS SOLVED.  2023-05-28
+#if 1 // DISABLE THIS CODE UNTIL CURRENT FUNKY FONT ISSUE IS SOLVED.  2023-05-28
         if (enable) {
             SSD1351_write_command(SSD1351_CMD_FUNCTIONSELECT);  // Enable Vdd voltage regulator
             SSD1351_write_data(0x01);
@@ -342,8 +351,10 @@ void PlaySplashVid(void)
         t++;
     }
     SSD1351_fill(COLOR_WHITE);
-    SSD1351_set_cursor(20, 64);
-    SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, "NO CONNECTION");
+    //SSD1351_set_cursor(20, 64);
+    //SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, "NO CONNECTION");
+    SSD1351_set_cursor(1, 64);
+    SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, "Waiting for Pi...");
     SSD1351_update();
 }
 
@@ -421,23 +432,23 @@ void SerialThread(void) {
         else {
             if (line[0] == 'A') {
                 line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                strcpy(SD_usage, line);
+                strcpy(SD_usage, line+1);
             }
             else if (line[0] == 'B') {
                 line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                strcpy(CPU_temp, line);
+                strcpy(CPU_temp, line+1);
             }
             else if (line[0] == 'C') {
                 line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                strcpy(CLK_speed, line);
+                strcpy(CLK_speed, line+1);
             }
             else if (line[0] == 'D') {
                 line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                strcpy(RAM_usage, line);
+                strcpy(RAM_usage, line+1);
             }
             else if (line[0] == 'E') {
                 line[STATS_BUFFER_SIZE - 1] = '\0'; // Truncate if too long
-                strcpy(IP_addr, line);
+                strcpy(IP_addr, line+1);
 
                 // This should allow the stats to be displayed after an END command, and then turn the screen off.
                 // The only way to turn the screen back on is then to start another game.
@@ -466,101 +477,76 @@ int main(void)
     bool firstGame = true;
     extern int shutdownReason;
 
-    while (!done) {
-        // GPIO Set-Up
+    // GPIO Set-Up
 
-        // TODO: Will re-running these init calls work ok?
+    // TODO: Will re-running these init calls work ok?
 
-        spi_set_format(SPI_PORT, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
-        gpio_init(CS);
-        gpio_set_dir(CS, GPIO_OUT);
-        gpio_put(CS, 1);
-        gpio_set_function(SCK, GPIO_FUNC_SPI);
-        gpio_set_function(MOSI, GPIO_FUNC_SPI);
-        gpio_pull_up(SCK);
-        gpio_pull_up(MOSI);
-        gpio_init(DC);
-        gpio_set_dir(DC, GPIO_OUT);
-        gpio_init(RST);
-        gpio_set_dir(RST, GPIO_OUT);
-        gpio_init(BUTTON_PIN);
-        gpio_set_dir(BUTTON_PIN, GPIO_IN);
-        gpio_pull_up(BUTTON_PIN);
+    spi_set_format(SPI_PORT, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+    gpio_init(CS);
+    gpio_set_dir(CS, GPIO_OUT);
+    gpio_put(CS, 1);
+    gpio_set_function(SCK, GPIO_FUNC_SPI);
+    gpio_set_function(MOSI, GPIO_FUNC_SPI);
+    gpio_pull_up(SCK);
+    gpio_pull_up(MOSI);
+    gpio_init(DC);
+    gpio_set_dir(DC, GPIO_OUT);
+    gpio_init(RST);
+    gpio_set_dir(RST, GPIO_OUT);
+    gpio_init(BUTTON_PIN);
+    gpio_set_dir(BUTTON_PIN, GPIO_IN);
+    gpio_pull_up(BUTTON_PIN);
 
-        // SPI Initialisation
+    // SPI Initialisation
 
-        stdio_init_all();
-        spi_init(SPI_PORT, 15000000);
-        SSD1351_init();
+    stdio_init_all();
+    spi_init(SPI_PORT, 15000000);
+    SSD1351_init();
 
-#i 0  // Simple dislay test
-    for (int i = 0; i < 20; i++) {
-#if 0
-        SSD1351_fill(SSD1351_get_rgb(255, 0, 0));
+    if (!stdin) {  // We are screwed!
+        SSD1351_clear_8();
+        SSD1351_printf(SSD1351_get_rgb(255, 0, 0), small_font, "No Stdin!");
         SSD1351_update();
-        sleep_ms(500);
-
-        SSD1351_fill(SSD1351_get_rgb(0, 255, 0));
-        SSD1351_update();
-        sleep_ms(500);
-
-        SSD1351_fill(SSD1351_get_rgb(0, 0, 255));
-        SSD1351_update();
-        sleep_ms(500);
-#endif
-
-        SSD1351_fill(SSD1351_get_rgb(255,255,255));
-        SSD1351_update();
-        sleep_ms(500);
+        sleep_ms(5000); // Display for a bit before we get to the watchdog timer code.
+        done = true;
     }
-    SSD1351_set_cursor(5, 5);
-    SSD1351_printf(SSD1351_get_rgb(255, 0, 0), small_font, "You Are Here");
-    SSD1351_update();
-    sleep_ms(5000);
-#endif
-        if (!stdin) {  // We are screwed!
-            SSD1351_clear_8();
-            SSD1351_printf(SSD1351_get_rgb(255, 0, 0), small_font, "No Stdin!");
-            SSD1351_update();
-            done = true;
+
+    while (!done) {
+        clearerr(stdin);
+
+        // Set up the video thread
+
+        if (firstGame) {
+            displayMode = SPLASH_SCREEN;
+            multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
+            firstGame = false;
         }
         else {
-            clearerr(stdin);
+            displayMode = DISPLAY_BLANKED;  // Don't do anything until we get an 'X' command.
+        }
 
-            // Set up the video thread
+        SerialThread();
 
-            if (firstGame) {
-                displayMode = SPLASH_SCREEN;
-                multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
-                firstGame = false;
+        if (shutdownReason != 0) {
+            multicore_reset_core1();
+            SSD1351_clear_8();
+            SSD1351_update();
+
+            if (shutdownReason == 1) {
+                // The Pico gets power from the VBUS, so there is always power unless you unplug the
+                // docking station from the all.
+                // 
+                // We could go into dormant mode here to save power, but to exit dormant mode we would
+                // need a pin to trigger wakeup, which we do not have.
+                // 
+                // Therefore, treat the power down event just like the emulator exit even.
+
+                shutdownReason = 0;
             }
             else {
-                displayMode = DISPLAY_BLANKED;  // Don't do anything until we get an 'X' command.
+                shutdownReason = 0;             // Just restart the loop
             }
-
-            SerialThread();
-
-            if (shutdownReason != 0) {
-                multicore_reset_core1();
-                SSD1351_clear_8();
-                SSD1351_update();
-
-                if (shutdownReason == 1) {
-                    // The Pico gets power from the VBUS, so there is always power unless you unplug the
-                    // docking station from the all.
-                    // 
-                    // We could go into dormant mode here to save power, but to exit dormant mode we would
-                    // need a pin to trigger wakeup, which we do not have.
-                    // 
-                    // Therefore, treat the power down event just like the emulator exit even.
-
-                    shutdownReason = 0;
-                }
-                else {
-                    shutdownReason = 0;             // Just restart the loop
-                }
-            }  // Otherwise we probably got here because of an I/O error.  Hopefully re-init will fix it.
-        }
+        }  // Otherwise we probably got here because of an I/O error.  Hopefully re-init will fix it.
     }
 
     /*
@@ -575,7 +561,7 @@ int main(void)
     * Therefore, below we turn on the watchdog timer and enter an infinite loop.  After a moment the
     * watchdog timer will detect the loop and reset the processor.
     * 
-    * PRESENTLY THERE IS NO WAY TO GET HERE.  Shutdown1 waits above for power off, and Shutdown2 tries to restart
+    * PRESENTLY THERE IS NO WAY TO GET HERE UNLESS STDIN IS NOT DEFINED.  Shutdown1 waits above for power off, and Shutdown2 tries to restart
     * the loop abov.  However, leave this code for reference.
     */
 
