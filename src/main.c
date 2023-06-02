@@ -11,7 +11,6 @@
 *
 * Revision History
 * ================
-* 
 * 2023-05-08 wmm  Restructure the serial input thread and main code so that input is handled in only a single thread.
 * 
 * 2023-05-10 wmm  Change python host code to generate .bin images use Big Endian encoding.  This way, reading the
@@ -36,8 +35,15 @@
 * 
 * 2023-05-31 wmm  Added "sudo" to python3 command in runcommand-onend.sh.
 * 
-* 2023-06-01 wmm  Restructured main() so it does initialization only once.
+* 2023-06-01 wmm  Restructured main() so it does initialization only once.  Apparently either the GPIO re-init or the
+*                 various library inits are not possible and can result in the display of garbage and other funny
+*                 behviour afer running our shutdown logic and then trying to restart.
 * 
+* 2023-06-01 wmm  Modified ssd1351 output routines to accept a color value containing both the foreground and background
+*                 colors.  The default background color is black.
+* 
+*                 Always show splash screen at start of loop instead of splash screen on first pass, then stats display.
+*
 * Power Behavior
 * ==============
 + TODO: Review these comments - do they all still apply?  2023-05-27.
@@ -81,7 +87,7 @@
 #define IMAGE_SIZE_BYTES 32768
 #define INACTIVE_TIMEOUT 60 * 1000000
 
-// The worst case for an uncomporessed IPV6 address would be 8 4-digit segments plus 7 colon separators + null, or 40 chars.
+// The worst case for an uncompressed IPV6 address would be 8 4-digit segments plus 7 colon separators + null, or 40 chars.
 // I've reserved 64 characters just in case, although that would never fit in the tiny display.
 
 #define STATS_BUFFER_SIZE 64
@@ -100,13 +106,14 @@ volatile DISPLAY_MODE displayMode = SPLASH_SCREEN;
 volatile bool displayEnabled = false;   // The display is actually on after initialization, but set to false for EnableDisplay.
 uint32_t lastActivityTime;              // Last activity in us
 
-int shutdownReason = 0;                 // 0=No, 1=Power off, 2=Game Engine stopped.
+int shutdownReason = 0; // 0=No, 1=Power off, 2=Game Engine stopped.
 
                                         /**
 * Display the various images in rotation while in "GAME_ACTIVE" mode.
 */
 
-void ButtonLoop(void) {
+void ButtonLoop(void)
+ {
     extern volatile bool displayEnabled;
     extern volatile DISPLAY_MODE displayMode;
     extern uint32_t lastActivityTime;
@@ -351,11 +358,20 @@ void PlaySplashVid(void)
         t++;
     }
     SSD1351_fill(COLOR_WHITE);
-    //SSD1351_set_cursor(20, 64);
-    //SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, "NO CONNECTION");
     SSD1351_set_cursor(1, 64);
-    SSD1351_printf(SSD1351_get_rgb(0, 0, 0), small_font, "Waiting for Pi...");
-    SSD1351_update();
+
+    uint8_t wait_time = 30;
+    while (wait_time != 0) {
+        SSD1351_printf(COLORFGBG(SSD1351_get_rgb(0, 0, 0), COLOR_WHITE), small_font, "Wait for Pi: %i ", wait_time);
+        SSD1351_update();
+        sleep_ms(1000);
+        wait_time--;
+    }
+
+    // This thread is normally killed by the main control process upon receipt of an "X" command.  If that
+    // still hasn't arrived, blank the display.
+
+    EnableDisplay(false);
 }
 
 /**
@@ -405,7 +421,7 @@ void SerialThread(void) {
                 EnableDisplay(true);
                 DisplayStats();
             }
-            else if (displayMode == DISPLAY_BLANKED) {  // This is the same as the SPLASH_SCREEN case -- at le
+            else if (displayMode == DISPLAY_BLANKED) {  // Same as above for now.  CAN PROBABLY REMOVE THIS MODE
                 EnableDisplayStats();
                 EnableDisplay(true);
                 DisplayStats();
@@ -474,7 +490,9 @@ int main(void)
 {
     extern volatile DISPLAY_MODE displayMode;
     bool done = false;
+#if 0  // Pre 2023-06-02
     bool firstGame = true;
+#endif
     extern int shutdownReason;
 
     // GPIO Set-Up
@@ -516,6 +534,10 @@ int main(void)
 
         // Set up the video thread
 
+#if 1  // 2023-06-02  -- Always show splash screen.
+        displayMode = SPLASH_SCREEN;
+        multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
+#else
         if (firstGame) {
             displayMode = SPLASH_SCREEN;
             multicore_launch_core1(PlaySplashVid);  // PlaySplashVid calls EnableDisplay.
@@ -524,6 +546,7 @@ int main(void)
         else {
             displayMode = DISPLAY_BLANKED;  // Don't do anything until we get an 'X' command.
         }
+#endif
 
         SerialThread();
 
