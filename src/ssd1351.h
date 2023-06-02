@@ -40,6 +40,9 @@ typedef union DisplayRAM {
     uint16_t halfw[DRAM_SIZE_16];
 } DRAM;
 
+// Create combined foreground and background colors for some of the output routines:
+#define COLORFGBG(fgColor, bgColor) (bgColor << 16 | fgColor)
+
 // SSD1351 Commands
 #define SSD1351_CMD_SETCOLUMN       0x15
 #define SSD1351_CMD_SETROW          0x75
@@ -103,13 +106,13 @@ uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b);
 
 void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color);
 
-static void SSD1351_write_char(uint16_t color, font_t font, char c);
+static void SSD1351_write_char(uint32_t color, font_t font, char c);
 
-static void SSD1351_write_string(uint16_t color, font_t font, char* line);
+static void SSD1351_write_string(uint32_t color, font_t font, char* line);
 
-static void SSD1351_write_int(uint16_t color, font_t font, int8_t n);
+static void SSD1351_write_int(uint32_t color, font_t font, int8_t n);
 
-void SSD1351_printf(uint16_t color, font_t font, const char* format, ...);
+void SSD1351_printf(uint32_t color, font_t font, const char* format, ...);
 
 void SSD1351_set_cursor(uint8_t x, uint8_t y);
 
