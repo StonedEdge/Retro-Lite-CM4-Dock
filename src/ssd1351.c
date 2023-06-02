@@ -7,6 +7,10 @@
 * =======
 * Creative Commons Attribution Share Alike 4.0 International*
 *
+* REVISION HISTORY
+* ================
+* 2023-06-01 wmm  Modified ssd1351 output routines to accept a color value containing both the foreground and background
+*                 colors.  The default background color is black.
 */
 
 #include "ssd1351.h"
@@ -165,6 +169,7 @@ void SSD1351_fill(uint16_t color) {
  * @param b: width of the rectangle
  * @reval 16bit value with the rgb color for display
  */
+
 uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b) {
     uint16_t rgb_color = 0;
     rgb_color |= ((r / 8) << 8);
@@ -181,6 +186,7 @@ uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b) {
  * @param y: Pixel's vertical position
  * @retval None
  */
+
 void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color) {
     if (x > 127 || y > 127 || x < 0 || y < 0) {
         return;
@@ -201,10 +207,16 @@ void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color) {
 * If you really need a different background color you can add that as a new parameter.
 * 
 * Note that the maximum font width is 16 pixels.
+*
+* @param color              [in] A 32-bit fg/bg color.
+*
+* @param font               [in] A font_t structure.
+*
+* @param c                  [in] Character to output.
 */
 
 #if 1  // NEW CODE
-static void SSD1351_write_char(uint16_t color, font_t font, char c) {
+static void SSD1351_write_char(uint32_t color, font_t font, char c) {
     if ((COLUMNS <= SSD1351_cursor.x + font.width) || (ROWS <= SSD1351_cursor.y + font.height)) {
         return;
     }
@@ -212,12 +224,15 @@ static void SSD1351_write_char(uint16_t color, font_t font, char c) {
         SSD1351_cursor.x = 127;
     }
     else {
+        uint16_t fgColor = color & 0xFFFF;
+        uint16_t bgColor = (color >> 16);
+
         for (int i = 0; i < font.height; i++) {
             uint16_t fd = font.data[(c - 32) * font.height + i];
             uint16_t pixMask = 0x8000;
 
             for (int j = 0; j < font.width; j++) {
-                uint16_t pixcolor = (fd & pixMask) != 0 ? color : COLOR_BLACK;
+                uint16_t pixcolor = (fd & pixMask) != 0 ? fgColor : bgColor;
                 pixMask >>= 1;
                 SSD1351_write_pixel(SSD1351_cursor.x + j, SSD1351_cursor.y + i, pixcolor);
 
@@ -260,7 +275,17 @@ static void SSD1351_write_char(uint16_t color, font_t font, char c) {
 }
 #endif
 
-static void SSD1351_write_string(uint16_t color, font_t font, char* line) {
+/**
+ * Write a string.
+ * 
+ * @param color             [in] A 32-bit fg/bg color.
+ * 
+ * @param font              [in] A font_t structure.
+ * 
+ * @param line              [in] The string to write.    
+*/
+
+static void SSD1351_write_string(uint32_t color, font_t font, char* line) {
     if (line != NULL) {
         while (*line != 0) {
             SSD1351_write_char(color, font, *line);
@@ -269,19 +294,35 @@ static void SSD1351_write_string(uint16_t color, font_t font, char* line) {
     }
 }
 
-static void SSD1351_write_int(uint16_t color, font_t font, int8_t n) {
+/**
+ * Write an integer.
+ * 
+ * @param color             [in] A 32-bit fg/bg color.
+ * 
+ * @param font              [in] A font_t structure.
+ * 
+ * @param n                 [in] 8-bit integer to display.    
+*/
+
+static void SSD1351_write_int(uint32_t color, font_t font, int8_t n) {
     char number[5];
     sprintf(number, "%i", n);
     SSD1351_write_string(color, font, number);
 }
 
-/*
- * @brief Prints a formatted string to the display
- * @param color: unsigned integer for the color of the string
- * @param font: structure holding the type of font
- * @param format: formatted string
- */
-void SSD1351_printf(uint16_t color, font_t font, const char* format, ...) {
+/**
+ * Write a formatted string.
+ * 
+ * @param color             [in] A 32-bit fg/bg color.
+ * 
+ * @param font              [in] A font_t structure.
+ * 
+ * @param format            [in] Format string.
+ * 
+ * @param ...               [in] Format arguments.  Limited type support: See code below.    
+*/
+
+void SSD1351_printf(uint32_t color, font_t font, const char* format, ...) {
     if (format != NULL) {
         va_list valist;
         va_start(valist, format);
