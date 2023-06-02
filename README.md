@@ -9,7 +9,7 @@
 </p>
 
 # Description 
-Updated: 2023/05/16
+Updated: 2023/06/03
 
 Note: Code base is now functional in terms of splashscreen, statistics and initial images. 
 Please see a to-do list for list of features still required to be completed. 
@@ -161,4 +161,4 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [ ] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
 - [ ] Implement game metadata within game mode
 - [ ] Implement "retrostats" into stats mode to show user most played games by times played & time duration using the RetroStats langest scripts 
-- [ ] Gracefully shutdown the OLED display when the console is powered down 
+- [x] Gracefully shutdown the OLED display when the console is powered down and restart it when console is repowered on
