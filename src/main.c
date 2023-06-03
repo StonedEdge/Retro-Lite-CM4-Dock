@@ -335,14 +335,19 @@ bool GetLine(char* line, int lineSize)
 
 /**
 * Play the splash screen for up to 20 seconds.
+* 
+* @param splashTime (global)        [in] Display time (approx) in seconds.
 */
 
+int splashTime = 20;
 void PlaySplashVid(void) 
 {
+    const char* waitMsg = "Wait for Pi: %i ";  // MUST BE <= OLED_WIDTH AFTER FORMATTING!
+
     EnableDisplay(true);
 
     int t = 0;
-    while (t < 20) {
+    while (t < splashTime) {
         SSD1351_write_command(SSD1351_CMD_WRITERAM);
         SSD1351_write_data_buffer(frame[0], OLED_BUF_SIZE);
         sleep_ms(500);
@@ -358,11 +363,15 @@ void PlaySplashVid(void)
         t++;
     }
     SSD1351_fill(COLOR_WHITE);
-    SSD1351_set_cursor(1, 64);
+
+    // Note uint8_t usage for lots of things in this code, and for message alignment don't go over a two-digit wait time.
 
     uint8_t wait_time = 30;
+    uint8_t x = (OLED_WIDTH - strlen(waitMsg)) / 2;
+
     while (wait_time != 0) {
-        SSD1351_printf(COLORFGBG(SSD1351_get_rgb(0, 0, 0), COLOR_WHITE), small_font, "Wait for Pi: %i ", wait_time);
+        SSD1351_set_cursor(x, 64);
+        SSD1351_printf(COLORFGBG(SSD1351_get_rgb(0, 0, 0), COLOR_WHITE), small_font, waitMsg, wait_time);
         SSD1351_update();
         sleep_ms(1000);
         wait_time--;
@@ -494,6 +503,7 @@ int main(void)
     bool firstGame = true;
 #endif
     extern int shutdownReason;
+    extern int splashTime;
 
     // GPIO Set-Up
 
@@ -570,6 +580,8 @@ int main(void)
                 shutdownReason = 0;             // Just restart the loop
             }
         }  // Otherwise we probably got here because of an I/O error.  Hopefully re-init will fix it.
+
+        splashTime = 5;  // Shorten the splash screen display time after the first pass.
     }
 
     /*
