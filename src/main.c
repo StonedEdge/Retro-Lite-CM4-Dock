@@ -342,7 +342,7 @@ bool GetLine(char* line, int lineSize)
 int splashTime = 20;
 void PlaySplashVid(void) 
 {
-    const char* waitMsg = "Wait for Pi: %i ";  // MUST BE <= OLED_WIDTH AFTER FORMATTING!
+    const char* waitMsg = "Wait for Pi: %i ";  // MUST BE <= OLED_WIDTH AFTER FORMATTING AND FONT SIZE SCALE!
 
     EnableDisplay(true);
 
@@ -362,16 +362,19 @@ void PlaySplashVid(void)
 
         t++;
     }
-    SSD1351_fill(COLOR_WHITE);
 
     // Note uint8_t usage for lots of things in this code, and for message alignment don't go over a two-digit wait time.
 
     uint8_t wait_time = 30;
-    uint8_t x = (OLED_WIDTH - strlen(waitMsg)) / 2;
+    uint8_t x = (OLED_WIDTH - strlen(waitMsg) * small_font.width) / 2;
+
+    uint16_t fgColor  = SSD1351_get_rgb(255,255,255);  // White
+    uint16_t bgColor = SSD1351_get_rgb(0,0,0);  // Black;
+    SSD1351_fill(COLOR_BLACK);
 
     while (wait_time != 0) {
         SSD1351_set_cursor(x, 64);
-        SSD1351_printf(COLORFGBG(SSD1351_get_rgb(0, 0, 0), COLOR_WHITE), small_font, waitMsg, wait_time);
+        SSD1351_printf(COLORFGBG(fgColor, bgColor), small_font, waitMsg, wait_time);
         SSD1351_update();
         sleep_ms(1000);
         wait_time--;
