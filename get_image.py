@@ -18,7 +18,19 @@ import cv2
 import psutil
 import fcntl
 import random
+import xml.etree.ElementTree as et
+from difflib import SequenceMatcher
 from PIL import Image, ImageDraw
+
+def get_img_directories():
+	global wheel, screenshot, boxart, consol
+	tempFile = open('/tmp/retropie-oled.log', 'r', -1)    # , "utf-8")
+	retropie_oled_img_dir = tempFile.readlines()
+	tempFile.close()
+	screenshot = retropie_oled_img_dir[0].rstrip('\n')
+	wheel = retropie_oled_img_dir[1].rstrip('\n')
+	boxart = retropie_oled_img_dir[2].rstrip('\n')
+	consol = retropie_oled_img_dir[3].rstrip('\n')
 
 def pico_com_port():
     global pico_ports
@@ -42,46 +54,82 @@ def pico_com_port():
 
     return pico_ports
 
-def get_img_directories():
-	global wheel, screenshot, boxart, consol
-	tempFile = open('/tmp/retropie-oled.log', 'r', -1)    # , "utf-8")
-	retropie_oled_img_dir = tempFile.readlines()
-	tempFile.close()
-	screenshot = retropie_oled_img_dir[0].rstrip('\n')
-	wheel = retropie_oled_img_dir[1].rstrip('\n')
-	boxart = retropie_oled_img_dir[2].rstrip('\n')
-	consol = retropie_oled_img_dir[3].rstrip('\n')
-
 def get_game_metadata():
-    tempFile = open('/tmp/retropie_oled.log', 'r', -1, "utf-8")
+    tempFile = open('/tmp/retropie-oled.log', 'r', -1, "utf-8")
     gamemetadata = tempFile.readlines()
     tempFile.close()
-    game_name = gamemetadata[0].split('/')[-1].rsplit('.',1)[0].split('(')[0].rstrip() # Get the current game name
-    system_name = gamemetadata[0].split('/')[5] # Get the current system name
+    game_name = gamemetadata[0].split('/')[-1].rsplit('.', 1)[0].split('(')[0].rstrip()  # Get the current game name
+    system_name = gamemetadata[0].split('/')[5]  # Get the current system name
     gamelist_path = os.path.join('/opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml')
     data = et.parse(gamelist_path)
-    
-    # Find all the games with matching names within gamelist_path
+
+    print("Debug Information:")
+    print("------------------")
+    print("Game Name:", game_name)
+    print("System Name:", system_name)
+    print("Game List Path:", gamelist_path)
+
     game_list = data.findall(u".//game[name='{0}']".format(saxutils.escape(game_name)))
+
+    desc = 'No description found'
+    rating = 'No rating found'
+    release_date = 'No release date found'
+    developer = 'No developer found'
+    publisher = 'No publisher found'
+    genre = 'No genre found'
+
+    # Find the best matching game name in the XML tree
+    best_match_ratio = 0.0
+    best_match_game = None
     
-    for game in game_list:
-        if game.find('desc') is not None:
-            desc = str('Description is :\n' + game.find('desc').text)
-            
-        if game.find('') is not None:
-            rating = str('Rating:\n' + game.find('rating').text)
-            
-        if game.find('releasedate') is not None:
-            release_date = str ('Release Date:\n' + game.find('releasedate').text)
-            
-        if game.find('developer') is not None: 
-            developer = str ('Developer:\n' + game.find('developer').text)
-            
-        if game.find('publisher') is not None: 
-            publsiher = str ('Publisher:\n' + game.find('releasedate').text)
-            
-        if game.find('genre') is not None: 
-            genre = str ('Genre:\n' + game.find('genre').text)
+    for game in data.findall(".//game"):
+        name = game.find('name').text
+        match_ratio = SequenceMatcher(None, game_name, name).ratio()
+        
+        if match_ratio > best_match_ratio:
+            best_match_ratio = match_ratio
+            best_match_game = game
+    
+    if best_match_game is not None:
+        # Extract the desired information from the best matching game element
+        if best_match_game.find('desc') is not None:
+            desc = str('Description is:\n' + best_match_game.find('desc').text)
+        else:
+            desc = 'N/A'
+        print(desc)
+
+        if best_match_game.find('lastplayed') is not None:
+            lastplayed = str('Last Played:\n' + best_match_game.find('lastplayed').text)
+        else:
+            lastplayed = 'N/A'
+        print(lastplayed)
+
+        if best_match_game.find('releasedate') is not None:
+            release_date = str('Release Date:\n' + best_match_game.find('releasedate').text)
+        else:
+            release_date = 'N/A'
+        print(release_date)
+
+        if best_match_game.find('developer') is not None:
+            developer = str('Developer:\n' + best_match_game.find('developer').text)
+        else:
+            developer = 'N/A'
+        print(developer)
+
+        if best_match_game.find('publisher') is not None:
+            publisher = str('Publisher:\n' + best_match_game.find('publisher').text)
+        else:
+            publisher = 'N/A'
+        print(publisher)
+
+        if best_match_game.find('genre') is not None:
+            genre = str('Genre:\n' + best_match_game.find('genre').text)
+        else:
+            genre = 'N/A'
+        print(genre)
+        
+    else: 
+        print("No close match found for game_name in the XML tree! RIP.")
 
 def center_crop(img,dim):
 	width, height = img.shape[1], img.shape[0]
@@ -287,6 +335,7 @@ fcntl.flock(lock_file, fcntl.LOCK_EX)
 
 while True:
     print("Waiting for game launch event file to be created...")
+    get_game_metadata()
     while not os.path.exists(GAME_START_FILE):
         time.sleep(0.1)
 
