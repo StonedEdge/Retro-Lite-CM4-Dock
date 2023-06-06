@@ -102,6 +102,8 @@ void SSD1351_clear_8(void);
 
 void SSD1351_fill(uint16_t color);
 
+void claim_unused_DMA_channel(void);
+
 uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b);
 
 void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color);
