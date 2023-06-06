@@ -20,12 +20,17 @@ target_link_libraries(
     pico_stdlib
     hardware_gpio
     hardware_spi
-    hardware_dma
+    # hardware_uart
     pico_binary_info
     pico_multicore
     pico_stdio_usb
+    hardware_sync
+    hardware_flash
 )
 
-pico_enable_stdio_usb(main 1)
+# pico_enable_stdio_usb(main 1)
+# pico_enable_stdio_uart(main 0)
+pico_enable_stdio_uart(main 1)
+pico_enable_stdio_usb(main 0)
 
 pico_add_extra_outputs(main)
