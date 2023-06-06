@@ -386,6 +386,18 @@ void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]) {
     SSD1351_update();
 }
 
+void claim_unused_DMA_channel() {
+  dma_tx = dma_claim_unused_channel(true);
+  c = dma_channel_get_default_config(dma_tx);
+  channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+  channel_config_set_dreq(&c, spi_get_index(SPI_PORT) ? DREQ_SPI1_TX : DREQ_SPI0_TX);
+  dma_channel_configure(dma_tx, &c,
+                          &spi_get_hw(SPI_PORT)->dr, // write address
+                          DRAM_8, // read address
+                          sizeof(OLED_BUF_SIZE), // element count (each element is of size transfer_data_size)
+                          true); // start
+}
+
 #define FLASH_OFFSET (1024 * 1536)
 
 void updateFlashData(uint8_t* flashData) // Update calibration data and flags
