@@ -157,8 +157,11 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [x] Send over random image to Pico located in consolevectors based on current system being launched on RetroPie (no scaling necessary)
 - [x] Implement a button state machine to switch between the stats and image mode
 - [x] Implement a timeout which fades black to the OLED with no button input. Wake up OLED on button press after X mins of no activity 
-- [ ] Write a python script to break up video into individual video frames on the Pi 4 and send over to Pico via ffmpeg 
-- [ ] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
-- [ ] Implement game metadata within game mode
-- [ ] Implement "retrostats" into stats mode to show user most played games by times played & time duration using the RetroStats langest scripts 
+- [x] Implement game metadata within game mode
 - [x] Gracefully shutdown the OLED display when the console is powered down and restart it when console is repowered on
+- [ ] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
+- [ ] Implement "retrostats" into stats mode to show user most played games by times played & time duration using the RetroStats langest scripts 
+
+# Nice to have 
+- [ ] Write a python script to break up video into individual video frames on the Pi 4 
+- [ ] Setup tinyUSB library to try and achieve 0.9MB/s transfer speeds for all frames, for 30 FPS video over USB 1.1 (max 1.5MB/s)
