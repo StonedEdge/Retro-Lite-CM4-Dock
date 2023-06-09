@@ -42,11 +42,9 @@ Here is the general flow of the program and how it works when power is applied:
 
          c) A randomized vector image of the real hardware the game could be played on. Includes all variants of every console (shoutouts to Ampersand for providing the high quality vectors!)
 
-         d) A small video of the gameplay of the game 
+         d) A description of the game, which scrolls vertically along the display
 
-         e) A description of the game, which scrolls vertically along the display
-
-         f) Other metadata, including rating, release date, developer, publisher, genre & # players
+         e) Other metadata, including rating, release date, developer, publisher, genre & # players per game 
 
 # Installation
 To install, run (won't currently work yet!)
