@@ -11,6 +11,8 @@
 * ================
 * 2023-06-01 wmm  Modified ssd1351 output routines to accept a color value containing both the foreground and background
 *                 colors.  The default background color is black.
+* 
+* 2023-06-09 wmm  Added SSD1351_display_text_buffer.
 */
 
 #include "ssd1351.h"
@@ -27,11 +29,7 @@ static DRAM displayRAM;
 
 uint8_t buffer[OLED_BUF_SIZE] = { 0x00 };
 
-// Screen cursor for printing
-struct cursor {
-    uint8_t x;
-    uint8_t y;
-}SSD1351_cursor;
+SSD_CURSOR SSD1351_cursor;
 
 void SSD1351_SendByte(uint8_t data) {
     spi_write_blocking(SPI_PORT, &data, 1);
@@ -148,15 +146,128 @@ void SSD1351_init(void) {
 }
 
 void SSD1351_clear(void) {
-    memset(DRAM_16, 0, DRAM_SIZE_16);
+    memset(DRAM_8, 0, DRAM_SIZE_8);
 }
 
 void SSD1351_clear_8(void) {
     memset(DRAM_8, 0, DRAM_SIZE_8);
 }
 
+/**
+* Display a block of text, with scrolling.
+*
+* This function is used to display game meta data such as the author, title, etc.
+*
+* @param text                   [in] Text buffer.
+*
+* @param textLen                [in] Number of bytes in "text".
+*
+* @param color                  [in] Color (same as for SSD1351_write_char)
+*
+* @param font                   [in] Font.
+*/
+
+void ssd1351_display_text_buffer(const char* text, int textLen, uint32_t color, font_t font)
+{
+    extern SSD_CURSOR SSD1351_cursor;
+    bool sawNewline = false;
+
+    uint16_t bgColor = color >> 16;
+    uint8_t fh = font.height + 2;         // The write_char() routine has 2 pixels of space between lines.
+
+    while (textLen-- > 0) {
+        char c = *text++;
+
+        if (sawNewline) {
+            // We have newline from end of previous line.  Now we can advance the cursor.
+            // By delaying this operation we don't end up with empty space after the last
+            // display line.
+
+            SSD1351_display_text_buffer_advance_cursor_y(fh, color);
+            sawNewline = false;
+        }
+
+        if (c == '\n') {                    // Don't handle until we absolutely must.
+            sawNewline = true;
+        }
+        else {
+            if (SSD1351_cursor.x >= OLED_WIDTH) {  // Line won't fit, move to next line and scroll if required.
+                SSD1351_display_text_buffer_advance_cursor_y(fh, color);
+            }
+        }
+
+        // Finally, output the next character.
+
+        if (c != '\n') {                // Not newline.
+            if (c < ' ') {              // Display other control characters as a space.
+                c = ' ';
+            }
+            SSD1351_write_char(color, font, c);
+            SSD1351_update();
+        }
+    }
+}
+
+/**
+* Advance the text cursor in the vertical direction, scrolliing the text if required.
+*
+* @param fh                             [in] Font height (amount to scroll).
+*
+* @param color                          [in] fg/bg color (see SSD1351_write_char).
+*/
+
+void SSD1351_display_text_buffer_advance_cursor_y(uint8_t fh, uint32_t color)
+{
+    if (SSD1351_cursor.y + fh < OLED_HEIGHT) {
+        // Advancing the cursor won't go off the screen, so simply set the new cursor position.
+        SSD1351_set_cursor(0, SSD1351_cursor.y + fh);
+    }
+    else {
+        // Advancing will go off the screen, so we have to move the current display contents.
+        // 
+        // Suppose we have this situation on a display that only allows 3 lines:
+        // ----------
+        //      Line1, cursor offset width * 0 * fh.
+        //      Line2, cursor offset width * 1 * fh.
+        //      Line3, cursor offset width * 2 * fh.
+        // ---- Line4: won't fit 
+
+        // Now move the middle lines (Line2 and Line3 above) up on the screen.  Multiply by 2 below
+        // accounts for byte to halfword size difference in cursor vs dram access.
+        //
+        // Number of items to move is the same as the number of items from the start up to Line3, or in
+        // this example, two lines worth of data.
+
+        memcpy(DRAM_8 /* top line*/, DRAM_8 + OLED_WIDTH * fh * 2 /* 2nd line */, OLED_WIDTH * SSD1351_cursor.y * 2);
+
+        // Back to beginning of the line that WOULD fit (Line3 in this example).
+
+        SSD1351_set_cursor(0, SSD1351_cursor.y - fh);
+
+        // Now we have:
+        // ----------
+        //      Line2
+        //      Line3
+        //      Line4 goes here where Line3 used to be.
+        // ----------
+        // 
+        // Blank out the space previously occupied by Line3.
+
+        uint16_t bgColor = color >> 16;
+
+        int nPixels = fh * OLED_WIDTH;  // Pixels per line of text.
+        int i = SSD1351_cursor.y * OLED_WIDTH;  // Offset to display row where we want to start blanking.  Cursor x is 0.
+        while (nPixels-- > 0) {
+            DRAM_16[i++] = bgColor;
+        }
+        SSD1351_update();
+
+        sleep_ms(200);  // How long to delay?
+    }
+}
+
 void SSD1351_fill(uint16_t color) {
-// TODO: IS THIS OK?  Need to swap bytes?
+    // TODO: IS THIS OK?  Need to swap bytes?
     for (int i = 0; i < DRAM_SIZE_16; i++) {
         DRAM_16[i] = color;
     }
@@ -164,9 +275,13 @@ void SSD1351_fill(uint16_t color) {
 
 /*
  * @brief Converts from RGB to a single 16bit value
+ * 
  * @param r: starting x coordinate
+ * 
  * @para g: starting y coordinate
+ * 
  * @param b: width of the rectangle
+ * 
  * @reval 16bit value with the rgb color for display
  */
 
@@ -181,9 +296,13 @@ uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b) {
 
 /**
  * @brief Writes a pixel data to the screen RAM buffer
+ * 
  * @param color: Unsigned int16 containing color code
+ * 
  * @param x: Pixel's horizontal position
+ * 
  * @param y: Pixel's vertical position
+ * 
  * @retval None
  */
 
@@ -241,7 +360,7 @@ static void SSD1351_write_char(uint32_t color, font_t font, char c) {
     }
 
     SSD1351_cursor.x += font.width;
-    if ((SSD1351_cursor.x + font.width >= 127) & (SSD1351_cursor.y + font.height <= 127)) {
+    if ((SSD1351_cursor.x + font.width >= OLED_WIDTH - 1) && (SSD1351_cursor.y + font.height <= OLED_WIDTH - 1)) {
         SSD1351_cursor.y = SSD1351_cursor.y + font.height + 2;
         SSD1351_cursor.x = 0;
     }
@@ -288,8 +407,7 @@ static void SSD1351_write_char(uint16_t color, font_t font, char c) {
 static void SSD1351_write_string(uint32_t color, font_t font, char* line) {
     if (line != NULL) {
         while (*line != 0) {
-            SSD1351_write_char(color, font, *line);
-            line++;
+            SSD1351_write_char(color, font, *line++);
         }
     }
 }
@@ -384,18 +502,6 @@ void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]) {
     // spi_write_blocking(SPI_PORT, buf, OLED_BUF_SIZE);
     memcpy(DRAM_8, buf, DRAM_SIZE_8);
     SSD1351_update();
-}
-
-void claim_unused_DMA_channel() {
-  dma_tx = dma_claim_unused_channel(true);
-  c = dma_channel_get_default_config(dma_tx);
-  channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
-  channel_config_set_dreq(&c, spi_get_index(SPI_PORT) ? DREQ_SPI1_TX : DREQ_SPI0_TX);
-  dma_channel_configure(dma_tx, &c,
-                          &spi_get_hw(SPI_PORT)->dr, // write address
-                          DRAM_8, // read address
-                          sizeof(OLED_BUF_SIZE), // element count (each element is of size transfer_data_size)
-                          true); // start
 }
 
 #define FLASH_OFFSET (1024 * 1536)
