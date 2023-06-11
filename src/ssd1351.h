@@ -40,6 +40,12 @@ typedef union DisplayRAM {
     uint16_t halfw[DRAM_SIZE_16];
 } DRAM;
 
+typedef struct cursor {  // Screen cursor object
+    uint8_t x;
+    uint8_t y;
+} SSD_CURSOR;
+
+
 // Create combined foreground and background colors for some of the output routines:
 #define COLORFGBG(fgColor, bgColor) (bgColor << 16 | fgColor)
 
@@ -100,9 +106,11 @@ void SSD1351_clear(void);
 
 void SSD1351_clear_8(void);
 
-void SSD1351_fill(uint16_t color);
+void ssd1351_display_text_buffer(const char* text, int textLen, uint32_t color, font_t font);
 
-void claim_unused_DMA_channel(void);
+void SSD1351_display_text_buffer_advance_cursor_y(uint8_t fontHeight, uint32_t color);
+
+void SSD1351_fill(uint16_t color);
 
 uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b);
 
