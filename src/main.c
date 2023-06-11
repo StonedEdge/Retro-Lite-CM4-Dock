@@ -43,6 +43,9 @@
 *                 colors.  The default background color is black.
 * 
 *                 Always show splash screen at start of loop instead of splash screen on first pass, then stats display.
+* 
+* 2023-06-09 wmm  Added ssd1351_display_text_buffer.  The text is current fixed with some test data, but this will eventually
+*                 come from the RPi host.
 *
 * Power Behavior
 * ==============
@@ -136,20 +139,28 @@ void ButtonLoop(void)
                 if (!displayEnabled) {      // If we are waking up, use the current item number.
                     EnableDisplay(true);
                 }
-                else if (++current_display > 2) {  // Rotate through the items.
+                else if (++current_display > 3) {  // Rotate through the items.
                     current_display = 0;
                 }
 
                 switch (current_display) {
-                    case 0:  // Display the combined image"
+                    case 0:  // TEMPORARILY MAKE THE TEXT THE FIRST ITEM - WE ADJUST WHICH ITEM THIS IS LATER
+                        SSD1351_fill(COLOR_BLACK);                // Init the screen.
+                        SSD1351_update();
+                        SSD1351_set_cursor(0, 0);
+
+                        const char* text = "Line1\nLine2\nLine3\nLine 4 abcdefghijklmnopqrstuvwxyz\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10\nLine11\nLine12\nLine13\nLine14\nLine15\n";
+                        ssd1351_display_text_buffer(text, strlen(text), COLOR_WHITE, small_font);
+                        break;
+                    case 1:  // Display the combined image"
                         SSD1351_clear_8();
                         SSD1351_display_image(combined_buffer);
                         break;
-                    case 1:  // Display the boxart image
+                    case 2:  // Display the boxart image
                         SSD1351_clear_8();
                         SSD1351_display_image(boxart_buffer);
                         break;
-                    case 2:  // Display the console image
+                    case 3:  // Display the console image
                         SSD1351_clear_8();
                         SSD1351_display_image(consol_buffer);
                         break;
@@ -266,8 +277,7 @@ void EnableDisplay(bool enable)
     if (displayEnabled != enable) {
         displayEnabled = enable;
 
-#if 1 // DISABLE THIS CODE UNTIL CURRENT FUNKY FONT ISSUE IS SOLVED.  2023-05-28
-        if (enable) {
+       if (enable) {
             SSD1351_write_command(SSD1351_CMD_FUNCTIONSELECT);  // Enable Vdd voltage regulator
             SSD1351_write_data(0x01);
             SSD1351_write_command(SSD1351_CMD_DISPLAYON);
@@ -279,7 +289,6 @@ void EnableDisplay(bool enable)
             SSD1351_write_command(SSD1351_CMD_FUNCTIONSELECT);  // Disable Vdd voltage regulator to save power
             SSD1351_write_data(0x00);
         }
-#endif
     }
 
     if (enable) {  // Reset the last activity time elsewhere we can determine inactivity.
