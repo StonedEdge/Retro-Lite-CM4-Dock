@@ -157,9 +157,9 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [x] Implement a timeout which fades black to the OLED with no button input. Wake up OLED on button press after X mins of no activity 
 - [x] Implement game metadata within game mode
 - [x] Gracefully shutdown the OLED display when the console is powered down and restart it when console is repowered on
-- [ ] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
-- [ ] Implement "retrostats" into stats mode to show user most played games by times played & time duration using the RetroStats langest scripts 
+- [x] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
+- [ ] Implement "retrostats" into stats mode to show user most played games by **times played** & **time duration** using the RetroStats scripts 
 
-# Nice to have 
+# Nice to have/probably won't implement any time soon! 
 - [ ] Write a python script to break up video into individual video frames on the Pi 4 
 - [ ] Setup tinyUSB library to try and achieve 0.9MB/s transfer speeds for all frames, for 30 FPS video over USB 1.1 (max 1.5MB/s)
