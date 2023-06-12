@@ -9,13 +9,31 @@ if ! sudo apt install python3 python3-pip -y; then
 fi
 echo "python3 has been successfully installed, moving on..."
 
+echo "Checking if RetroStats is already installed..."
+# Check if RetroStats is already installed
+if pip3 show RetroStats >/dev/null 2>&1; then
+    echo "RetroStats is already installed"
+else
+    echo "Installing RetroStats..."
+    # Clone RetroStats repository
+    cd RetroPie
+    git clone https://github.com/langest/RetroStats
+    cd RetroStats
+    # Install RetroStats Python package
+    if ! pip3 install . --user; then
+        echo "Error: Failed to install RetroStats"
+        exit 1
+    fi
+    echo "RetroStats has been successfully installed, moving on..."
+fi
+
 echo "Installing required python packages..."
 # Install required python packages
 if ! pip3 install gitpython pyserial opencv-python-headless psutil pillow; then
     echo "Error: Failed to install required python packages"
     exit 1
 fi
-echo "python3 packages have been successfully installed, moving on..."
+echo "Python3 packages have been successfully installed, moving on..."
 
 echo "Finding the connected USB with Pico VID and PID..."
 # Find the connected USB with Pico VID and PID
@@ -36,7 +54,7 @@ if ! sudo cp Retro-Lite-CM4-Dock/firmware/main.uf2 "$pico_port"; then
     echo "Error: Failed to copy main.uf2 to the Pico USB - check if Pico is connected. Pico not programmed!"
     exit 1
 fi
-echo "Pico succesfully programmed with Retro Lite CM4 dock firwmare. Nice job!"
+echo "Pico successfully programmed with Retro Lite CM4 dock firmware. Nice job!"
 
 echo "Copying runcommand_onhooks files to /opt/retropie/configs/all... to read game on startup"
 # Copy runcommand_onhooks files to /opt/retropie/configs/all
@@ -44,6 +62,6 @@ if ! sudo cp -R Retro-Lite-CM4-Dock/runcommand_onhooks/* /opt/retropie/configs/a
     echo "Error: Failed to copy runcommand_onhooks files to /opt/retropie/configs/all"
     exit 1
 fi
-echo "runcommand_onhooks succesfully moved to correct location. Nice!"
+echo "runcommand_onhooks successfully moved to the correct location. Nice!"
 
 echo "Retro Lite CM4 docking firmware is now installed. Give it a try! Now exiting..."
