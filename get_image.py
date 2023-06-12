@@ -54,25 +54,26 @@ def pico_com_port():
 
     return pico_ports
 
+# Returns game meta data as a blob of lines.
+
 def get_game_metadata():
     tempFile = open('/tmp/retropie-oled.log', 'r', -1, "utf-8")
-    gamemetadata = tempFile.readlines()
+    gameMetadata = tempFile.readlines()
     tempFile.close()
-    game_name = gamemetadata[0].split('/')[-1].rsplit('.', 1)[0].split('(')[0].rstrip()  # Get the current game name
-    system_name = gamemetadata[0].split('/')[5]  # Get the current system name
+    game_name = gameMetadata[0].split('/')[-1].rsplit('.', 1)[0].split('(')[0].rstrip()  # Get the current game name
+    system_name = gameMetadata[0].split('/')[5]  # Get the current system name
     gamelist_path = os.path.join('/opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml')
     data = et.parse(gamelist_path)
 
-    print("Debug Information:")
-    print("------------------")
-    print("Game Name:", game_name)
-    print("System Name:", system_name)
-    print("Game List Path:", gamelist_path)
+    metadata = ''  # Updated variable name
+    
+    metadata += 'Game Name: ' + game_name + '\n'
+    metadata += 'System Name: ' + system_name + '\n'
 
     game_list = data.findall(u".//game[name='{0}']".format(saxutils.escape(game_name)))
 
     desc = 'No description found'
-    rating = 'No rating found'
+    lastplayed = 'No rating found'
     release_date = 'No release date found'
     developer = 'No developer found'
     publisher = 'No publisher found'
@@ -94,42 +95,59 @@ def get_game_metadata():
         # Extract the desired information from the best matching game element
         if best_match_game.find('desc') is not None:
             desc = str('Description is:\n' + best_match_game.find('desc').text)
+            metadata += 'Description: ' + desc + '\n'
         else:
             desc = 'N/A'
-        print(desc)
+
 
         if best_match_game.find('lastplayed') is not None:
-            lastplayed = str('Last Played:\n' + best_match_game.find('lastplayed').text)
+            # TODO: THIS IS A NUMBER, NOT A DATE IN TEXT FORMAT
+            temp = best_match_game.find('lastplayed').text
+            lastplayed = str('Last Played:\n' + temp)
+            metadata += 'Last Played: ' + temp + '\n'
         else:
             lastplayed = 'N/A'
-        print(lastplayed)
+
 
         if best_match_game.find('releasedate') is not None:
-            release_date = str('Release Date:\n' + best_match_game.find('releasedate').text)
+            # TODO: THIS IS A NUMBER, NOT A DATE IN TEXT FORMAT
+            temp = str(best_match_game.find('releasedate').text)
+            release_date = str('Release Date:\n' + temp)
+            metadata += 'Released: ' + temp + '\n'
         else:
             release_date = 'N/A'
-        print(release_date)
+
 
         if best_match_game.find('developer') is not None:
-            developer = str('Developer:\n' + best_match_game.find('developer').text)
+            temp = str(best_match_game.find('developer').text)
+            developer = str('Developer:\n' + temp)
+            metadata += 'Developer: ' + temp + '\n'
         else:
             developer = 'N/A'
-        print(developer)
+ 
 
         if best_match_game.find('publisher') is not None:
+            temp = str(best_match_game.find('publisher').text)
             publisher = str('Publisher:\n' + best_match_game.find('publisher').text)
+            metadata += 'Publisher: ' + temp + '\n'
         else:
             publisher = 'N/A'
-        print(publisher)
+
 
         if best_match_game.find('genre') is not None:
-            genre = str('Genre:\n' + best_match_game.find('genre').text)
+            temp = str(best_match_game.find('genre').text)
+            genre = str('Genre:\n' + temp)
+            metadata += 'Genre: ' + genre + '\n'
         else:
             genre = 'N/A'
-        print(genre)
-        
+    
+        sys.stdout.write("Game Metadata:\n")
+        sys.stdout.write(metadata)
+
     else: 
-        print("No close match found for game_name in the XML tree! RIP.")
+        print("No best match game found in the XML tree!")
+
+    return metadata
 
 def center_crop(img,dim):
 	width, height = img.shape[1], img.shape[0]
@@ -335,7 +353,6 @@ fcntl.flock(lock_file, fcntl.LOCK_EX)
 
 while True:
     print("Waiting for game launch event file to be created...")
-    get_game_metadata()
     while not os.path.exists(GAME_START_FILE):
         time.sleep(0.1)
 
@@ -352,12 +369,14 @@ while True:
         get_combined_image()
         ser = serial.Serial(port, 115200)
         ser.write(b"start\n")
+
         data = open("combined.bin", "rb")
         ser.write(data.read())
         data.close()
         print("Combined image sent to Pico on port", port)
                 
         # Send boxart image to Pico
+
         get_boxart_image()
         data = open("boxart.bin", "rb")
         ser.write(data.read())
@@ -365,16 +384,27 @@ while True:
         print("Boxart image sent to Pico on port", port)
         
         # Send console image to Pico
+
         get_consol_image()
         data = open("consol.bin", "rb")
         ser.write(data.read())
         data.close()
         print("Console image sent to Pico on port", port)
+ 
+        # Send Game Metadata
+        #
+        # Data is: length,text_lines
+
+        data = get_game_metadata()
+        ser.write(data().encode('utf-8') + b',')
+        ser.write(data.encode('utf-8'))
+        print("Metadata sent to Pico on port", port)
+
         fcntl.flock(lock_file, fcntl.LOCK_UN)
         lock_file.close()
         print("Lock successfully released")
         ser.close()
- 
+
 
     # Remove the game start file
     os.remove(GAME_START_FILE)
