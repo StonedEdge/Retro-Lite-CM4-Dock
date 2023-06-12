@@ -44,9 +44,12 @@
 * 
 *                 Always show splash screen at start of loop instead of splash screen on first pass, then stats display.
 * 
-* 2023-06-09 wmm  Added ssd1351_display_text_buffer.  The text is current fixed with some test data, but this will eventually
+* 2023-06-09 wmm  Added SSD1351_display_text_buffer.  The text is current fixed with some test data, but this will eventually
 *                 come from the RPi host.
 *
+* 2023-06-12 wmm  Added more code to accept the game metadata from the RPi and then to display it via
+*                 SSD13551_display_text_buffer.
+* 
 * Power Behavior
 * ==============
 + TODO: Review these comments - do they all still apply?  2023-05-27.
@@ -101,6 +104,14 @@ uint8_t boxart_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 uint8_t combined_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 uint8_t consol_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 
+
+// This is enough for about 25 lines of metadata text!
+
+#define MAX_METADATA_LENGTH 1024
+
+int metadata_buffer_length = 0;             // Actual length of received data.
+char metadata_buffer[MAX_METADATA_LENGTH] = { 0 };
+
 void EnableDisplay(bool enable);
 bool GetLine(char* line, int lineSize);
 
@@ -120,6 +131,8 @@ void ButtonLoop(void)
     extern volatile bool displayEnabled;
     extern volatile DISPLAY_MODE displayMode;
     extern uint32_t lastActivityTime;
+    extern char metadata_buffer[MAX_METADATA_LENGTH];
+    extern int metadata_buffer_length;
 
     EnableDisplay(true);
 
@@ -149,8 +162,7 @@ void ButtonLoop(void)
                         SSD1351_update();
                         SSD1351_set_cursor(0, 0);
 
-                        const char* text = "Line1\nLine2\nLine3\nLine 4 abcdefghijklmnopqrstuvwxyz\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10\nLine11\nLine12\nLine13\nLine14\nLine15\n";
-                        ssd1351_display_text_buffer(text, strlen(text), COLOR_WHITE, small_font);
+                        ssd1351_display_text_buffer(metadata_buffer, metadata_buffer_length, COLOR_WHITE, small_font);
                         break;
                     case 1:  // Display the combined image"
                         SSD1351_clear_8();
@@ -396,7 +408,7 @@ void PlaySplashVid(void)
 }
 
 /**
-* Play the splash screen video once.  (Not used.)
+* Play the splash screen video once if you'd like.  (Not used.)
 */
 
 void PlaySplashVidSingle(void) {
