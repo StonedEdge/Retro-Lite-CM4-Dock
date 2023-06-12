@@ -396,7 +396,7 @@ while True:
         # Data is: length,text_lines
 
         data = get_game_metadata()
-        ser.write(data().encode('utf-8') + b',')
+        ser.write(str(len(data)).encode('utf-8') + b',')
         ser.write(data.encode('utf-8'))
         print("Metadata sent to Pico on port", port)
 
