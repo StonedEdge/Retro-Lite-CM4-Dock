@@ -31,36 +31,42 @@ uint8_t buffer[OLED_BUF_SIZE] = { 0x00 };
 
 SSD_CURSOR SSD1351_cursor;
 
-void SSD1351_SendByte(uint8_t data) {
+void SSD1351_SendByte(uint8_t data)
+{
     spi_write_blocking(SPI_PORT, &data, 1);
 }
 
-void SSD1351_SendBuffer(const uint8_t* buffer, uint16_t len) {
+void SSD1351_SendBuffer(const uint8_t* buffer, uint16_t len)
+{
     spi_write_blocking(SPI_PORT, buffer, len);
 }
 
-void SSD1351_write_command(uint8_t cmd) {
+void SSD1351_write_command(uint8_t cmd)
+{
     gpio_put(DC, 0);
     gpio_put(CS, 0);
     SSD1351_SendByte(cmd);
     gpio_put(CS, 1);
 }
 
-void SSD1351_write_data(uint8_t data) {
+void SSD1351_write_data(uint8_t data)
+{
     gpio_put(DC, 1);
     gpio_put(CS, 0);
     SSD1351_SendByte(data);
     gpio_put(CS, 1);
 }
 
-void SSD1351_write_data_buffer(const uint8_t* data, uint16_t len) {
+void SSD1351_write_data_buffer(const uint8_t* data, uint16_t len)
+{
     gpio_put(DC, 1);
     gpio_put(CS, 0);
     SSD1351_SendBuffer(data, len);
     gpio_put(CS, 1);
 }
 
-void SSD1351_update(void) {
+void SSD1351_update(void)
+{
     SSD1351_write_command(SSD1351_CMD_SETCOLUMN);
     SSD1351_write_data(0x00);
     SSD1351_write_data(0x7F);
@@ -71,7 +77,8 @@ void SSD1351_update(void) {
     SSD1351_write_data_buffer(DRAM_8, DRAM_SIZE_8);
 }
 
-void SSD1351_init(void) {
+void SSD1351_init(void)
+{
     gpio_put(DC, 1);
     gpio_put(RST, 1);
     sleep_ms(10);
@@ -145,11 +152,13 @@ void SSD1351_init(void) {
     sleep_ms(10);
 }
 
-void SSD1351_clear(void) {
+void SSD1351_clear(void)
+{
     memset(DRAM_8, 0, DRAM_SIZE_8);
 }
 
-void SSD1351_clear_8(void) {
+void SSD1351_clear_8(void)
+{
     memset(DRAM_8, 0, DRAM_SIZE_8);
 }
 
@@ -172,7 +181,6 @@ void ssd1351_display_text_buffer(const char* text, int textLen, uint32_t color, 
     extern SSD_CURSOR SSD1351_cursor;
     bool sawNewline = false;
 
-    uint16_t bgColor = color >> 16;
     uint8_t fh = font.height + 2;         // The write_char() routine has 2 pixels of space between lines.
 
     while (textLen-- > 0) {
@@ -190,10 +198,13 @@ void ssd1351_display_text_buffer(const char* text, int textLen, uint32_t color, 
         if (c == '\n') {                    // Don't handle until we absolutely must.
             sawNewline = true;
         }
-        else {
-            if (SSD1351_cursor.x >= OLED_WIDTH) {  // Line won't fit, move to next line and scroll if required.
-                SSD1351_display_text_buffer_advance_cursor_y(fh, color);
-            }
+        else if (SSD1351_cursor.x == 0 && SSD1351_cursor.y + fh >= OLED_HEIGHT) {
+            // We want to start a new line, but it's not going to fit vertically.
+            SSD1351_display_text_buffer_advance_cursor_y(fh, color);
+        }
+        else if (SSD1351_cursor.x >= OLED_WIDTH) {
+            // Line won't fit horizontally, so move to next line and scroll if required.
+            SSD1351_display_text_buffer_advance_cursor_y(fh, color);
         }
 
         // Finally, output the next character.
@@ -266,7 +277,8 @@ void SSD1351_display_text_buffer_advance_cursor_y(uint8_t fh, uint32_t color)
     }
 }
 
-void SSD1351_fill(uint16_t color) {
+void SSD1351_fill(uint16_t color)
+{
     // TODO: IS THIS OK?  Need to swap bytes?
     for (int i = 0; i < DRAM_SIZE_16; i++) {
         DRAM_16[i] = color;
@@ -285,7 +297,8 @@ void SSD1351_fill(uint16_t color) {
  * @reval 16bit value with the rgb color for display
  */
 
-uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b) {
+uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
     uint16_t rgb_color = 0;
     rgb_color |= ((r / 8) << 8);
     rgb_color |= ((g / 4) >> 3);
@@ -306,7 +319,8 @@ uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b) {
  * @retval None
  */
 
-void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color) {
+void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color)
+{
     if (x > 127 || y > 127 || x < 0 || y < 0) {
         return;
     }
@@ -335,7 +349,8 @@ void SSD1351_write_pixel(int16_t x, int16_t y, uint16_t color) {
 */
 
 #if 1  // NEW CODE
-static void SSD1351_write_char(uint32_t color, font_t font, char c) {
+static void SSD1351_write_char(uint32_t color, font_t font, char c)
+{
     if ((COLUMNS <= SSD1351_cursor.x + font.width) || (ROWS <= SSD1351_cursor.y + font.height)) {
         return;
     }
@@ -404,7 +419,8 @@ static void SSD1351_write_char(uint16_t color, font_t font, char c) {
  * @param line              [in] The string to write.    
 */
 
-static void SSD1351_write_string(uint32_t color, font_t font, char* line) {
+static void SSD1351_write_string(uint32_t color, font_t font, char* line)
+{
     if (line != NULL) {
         while (*line != 0) {
             SSD1351_write_char(color, font, *line++);
@@ -422,7 +438,8 @@ static void SSD1351_write_string(uint32_t color, font_t font, char* line) {
  * @param n                 [in] 8-bit integer to display.    
 */
 
-static void SSD1351_write_int(uint32_t color, font_t font, int8_t n) {
+static void SSD1351_write_int(uint32_t color, font_t font, int8_t n)
+{
     char number[5];
     sprintf(number, "%i", n);
     SSD1351_write_string(color, font, number);
@@ -440,7 +457,8 @@ static void SSD1351_write_int(uint32_t color, font_t font, int8_t n) {
  * @param ...               [in] Format arguments.  Limited type support: See code below.    
 */
 
-void SSD1351_printf(uint32_t color, font_t font, const char* format, ...) {
+void SSD1351_printf(uint32_t color, font_t font, const char* format, ...)
+{
     if (format != NULL) {
         va_list valist;
         va_start(valist, format);
@@ -470,7 +488,8 @@ void SSD1351_printf(uint32_t color, font_t font, const char* format, ...) {
     }
 }
 
-void SSD1351_set_cursor(uint8_t x, uint8_t y) {
+void SSD1351_set_cursor(uint8_t x, uint8_t y)
+{
     SSD1351_cursor.x = x;
     SSD1351_cursor.y = y;
 }
@@ -486,9 +505,11 @@ void SSD1351_set_cursor(uint8_t x, uint8_t y) {
 // }
 
 
-void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]) {
+void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE])
+{
     SSD1351_clear();
     uint32_t i = 0;
+
     while (i < DRAM_SIZE_8) {
         int data = getchar_timeout_us(0);
         if (data != PICO_ERROR_TIMEOUT) {
@@ -497,7 +518,54 @@ void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]) {
     }
 }
 
-void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]) {
+/**
+* Receive the metadata text blob from the RPi host.
+* 
+* @param buffer             [in, out] Area to store the data in.
+* 
+* @param bufferMax          [in] Maximum number of characters to store.
+* 
+* @param bufferSize         [in] Actual number of characters received.
+*/
+
+
+void SSD1351_get_metadata(char* buffer, int bufferMax, int* bufferSize)
+{
+    int buffSize = 0;
+    int c;
+
+    // The length is sent as a comma-terminated digit string before the actual data.
+
+    while (true) {
+        c = getchar_timeout_us(0);
+        if (c == PICO_ERROR_TIMEOUT || c == ',') {
+            break;
+        }
+        buffSize = buffSize * 10 + (c - '0');
+    };
+
+    for (int i = 0; c != PICO_ERROR_TIMEOUT && i < buffSize; i++) {
+        c = getchar_timeout_us(0);
+        if (c != PICO_ERROR_TIMEOUT) {
+            if (i < bufferMax) {
+                *buffer++ = c;
+            }
+            /*
+            * Else if too many characters are being sent, we are probably screwed, but
+            * at least try not to implode.
+            */
+        }
+    }
+    
+    if (c == PICO_ERROR_TIMEOUT) {  // We are screwed!
+        buffSize = 0;
+    }
+
+    *bufferSize = buffSize;         // Save actual content size.
+}
+
+void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE])
+{
     SSD1351_write_command(SSD1351_CMD_WRITERAM);
     // spi_write_blocking(SPI_PORT, buf, OLED_BUF_SIZE);
     memcpy(DRAM_8, buf, DRAM_SIZE_8);
