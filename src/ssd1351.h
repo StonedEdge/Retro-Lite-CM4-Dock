@@ -106,10 +106,6 @@ void SSD1351_clear(void);
 
 void SSD1351_clear_8(void);
 
-void ssd1351_display_text_buffer(const char* text, int textLen, uint32_t color, font_t font);
-
-void SSD1351_display_text_buffer_advance_cursor_y(uint8_t fontHeight, uint32_t color);
-
 void SSD1351_fill(uint16_t color);
 
 uint16_t SSD1351_get_rgb(uint8_t r, uint8_t g, uint8_t b);
@@ -126,8 +122,17 @@ void SSD1351_printf(uint32_t color, font_t font, const char* format, ...);
 
 void SSD1351_set_cursor(uint8_t x, uint8_t y);
 
-void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]);
+// These are specifically for Retro-Lite-CM4-Dock
+
+void ssd1351_display_text_buffer(const char* text, int textLen, uint32_t color, font_t font);
+
 
 void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]);
+
+void SSD1351_display_text_buffer_advance_cursor_y(uint8_t fontHeight, uint32_t color);
+
+void SSD1351_get_image(uint8_t buf[OLED_BUF_SIZE]);
+
+void SSD1351_get_metadata(char* buffer, int bufferMax, int* bufferSize);
 
 void updateFlashData(uint8_t* flashData);
