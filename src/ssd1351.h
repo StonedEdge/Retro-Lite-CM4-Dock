@@ -126,7 +126,6 @@ void SSD1351_set_cursor(uint8_t x, uint8_t y);
 
 void ssd1351_display_text_buffer(const char* text, int textLen, uint32_t color, font_t font);
 
-
 void SSD1351_display_image(uint8_t buf[OLED_BUF_SIZE]);
 
 void SSD1351_display_text_buffer_advance_cursor_y(uint8_t fontHeight, uint32_t color);
