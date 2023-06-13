@@ -105,9 +105,9 @@ uint8_t combined_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 uint8_t consol_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 
 
-// This is enough for about 25 lines of metadata text!
+// This is enough for about 50 lines of metadata text!
 
-#define MAX_METADATA_LENGTH 1024
+#define MAX_METADATA_LENGTH 2048
 
 int metadata_buffer_length = 0;             // Actual length of received data.
 char metadata_buffer[MAX_METADATA_LENGTH] = { 0 };
@@ -408,7 +408,7 @@ void PlaySplashVid(void)
 }
 
 /**
-* Play the splash screen video once if you'd like.  (Not used.)
+* Play the splash screen video once.  (Not used.)
 */
 
 void PlaySplashVidSingle(void) {
@@ -466,6 +466,7 @@ void SerialThread(void) {
             SSD1351_get_image(combined_buffer);
             SSD1351_get_image(boxart_buffer);
             SSD1351_get_image(consol_buffer);
+            SSD1351_get_metadata(metadata_buffer, MAX_METADATA_LENGTH, &metadata_buffer_length);
             SSD1351_display_image(combined_buffer);
             displayMode = GAME_ACTIVE;
             multicore_launch_core1(ButtonLoop);  // ButtonLoop manages lastActivityTime
