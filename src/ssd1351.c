@@ -176,7 +176,7 @@ void SSD1351_clear_8(void)
 * @param font                   [in] Font.
 */
 
-void ssd1351_display_text_buffer(const char* text, int textLen, uint32_t color, font_t font)
+void SSD1351_display_text_buffer(const char* text, int textLen, uint32_t color, font_t font)
 {
     extern SSD_CURSOR SSD1351_cursor;
     bool sawNewline = false;
@@ -538,17 +538,21 @@ void SSD1351_get_metadata(char* buffer, int bufferMax, int* bufferSize)
 
     while (true) {
         c = getchar_timeout_us(0);
-        if (c == PICO_ERROR_TIMEOUT || c == ',') {
+        if (c == PICO_ERROR_TIMEOUT) {
+            continue;
+        }
+        if (c == ',') {
             break;
         }
         buffSize = buffSize * 10 + (c - '0');
     };
 
-    for (int i = 0; c != PICO_ERROR_TIMEOUT && i < buffSize; i++) {
+    for (int i = 0;  i < buffSize; ) {
         c = getchar_timeout_us(0);
         if (c != PICO_ERROR_TIMEOUT) {
             if (i < bufferMax) {
                 *buffer++ = c;
+                i++;
             }
             /*
             * Else if too many characters are being sent, we are probably screwed, but
