@@ -29,7 +29,7 @@
 *            wmm  When waking up from screen blackout, display the current image instead of skipping to the next image.
 *
 * 2023-05-19 wmm  Added watchdog timer handling at the end of main().  Terminating main() will now reboot the processor
-*                 intead of going into an infinite breakpoint loop.
+*                 intead of going ginto an infinite breakpoint loop.
 *
 * 2023-05-27 wmm  Fixed SSD1351_write_char -- It was setting all pixels, not just "non-empty" pixels.
 * 
@@ -104,7 +104,6 @@ uint8_t boxart_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 uint8_t combined_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 uint8_t consol_buffer[IMAGE_SIZE_BYTES] = { 0x00 };
 
-
 // This is enough for about 50 lines of metadata text!
 
 #define MAX_METADATA_LENGTH 2048
@@ -136,7 +135,10 @@ void ButtonLoop(void)
 
     EnableDisplay(true);
 
-    int current_display = 0; // start with the first image
+    // The "start" handler initiallly displays the combined image.  Set current_display to 0
+    // here, so on the first button press we'll increment and show the boxart.
+
+    int current_display = 0;
     uint32_t last_press_time = 0;
 
     while (displayMode == GAME_ACTIVE) {
@@ -157,16 +159,15 @@ void ButtonLoop(void)
                 }
 
                 switch (current_display) {
-                    case 0:  // TEMPORARILY MAKE THE TEXT THE FIRST ITEM - WE ADJUST WHICH ITEM THIS IS LATER
+                    case 0:  // Display the combined image"
+                        SSD1351_clear_8();
+                        SSD1351_display_image(combined_buffer);
+                        break;
+                    case 1:  // Display the game metadata.
                         SSD1351_fill(COLOR_BLACK);                // Init the screen.
                         SSD1351_update();
                         SSD1351_set_cursor(0, 0);
-
-                        ssd1351_display_text_buffer(metadata_buffer, metadata_buffer_length, COLOR_WHITE, small_font);
-                        break;
-                    case 1:  // Display the combined image"
-                        SSD1351_clear_8();
-                        SSD1351_display_image(combined_buffer);
+                        SSD1351_display_text_buffer(metadata_buffer, metadata_buffer_length, COLOR_WHITE, small_font);
                         break;
                     case 2:  // Display the boxart image
                         SSD1351_clear_8();
@@ -441,6 +442,8 @@ void SerialThread(void) {
     extern volatile DISPLAY_MODE displayMode;
     extern volatile bool displayEnabled;
     extern uint32_t lastActivityTime;
+    extern char metadata_buffer[MAX_METADATA_LENGTH];
+    extern int metadata_buffer_length;
     extern char SD_usage[STATS_BUFFER_SIZE], CPU_temp[STATS_BUFFER_SIZE], CLK_speed[STATS_BUFFER_SIZE], RAM_usage[STATS_BUFFER_SIZE], IP_addr[STATS_BUFFER_SIZE];
     extern int shutdownReason;
 
@@ -467,6 +470,7 @@ void SerialThread(void) {
             SSD1351_get_image(boxart_buffer);
             SSD1351_get_image(consol_buffer);
             SSD1351_get_metadata(metadata_buffer, MAX_METADATA_LENGTH, &metadata_buffer_length);
+
             SSD1351_display_image(combined_buffer);
             displayMode = GAME_ACTIVE;
             multicore_launch_core1(ButtonLoop);  // ButtonLoop manages lastActivityTime
