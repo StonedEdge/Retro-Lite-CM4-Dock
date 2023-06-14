@@ -158,7 +158,7 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [x] Implement game metadata within game mode
 - [x] Gracefully shutdown the OLED display when the console is powered down and restart it when console is repowered on
 - [x] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
-- [ ] Implement "retrostats" into stats mode to show user most played games by **times played** & **time duration** using the RetroStats scripts 
+- [ ] Implement "retrostats" into stats mode to show user most played games by **times played** & **time duration** using the RetroStats scripts. Note : No RTC so time duration may not be accurate. 
 
 # Nice to have/probably won't implement any time soon! 
 - [ ] Write a python script to break up video into individual video frames on the Pi 4 
