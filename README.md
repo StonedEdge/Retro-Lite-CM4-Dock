@@ -5,7 +5,7 @@
 </div>
 
 <p align="left">
-   <img src="(https://imgur.com/WnWMyfu)" width = 25% height = 25%/>
+   <img src="https://imgur.com/WnWMyfu" width = 25% height = 25%/>
 </p>
 
 <p align="center">
@@ -13,7 +13,7 @@
 </p>
 
 <p align="right">
-   <img src="https://i.imgur.com/RhksMgQ.jpg" width = 25% height = 25%/>
+   <img src="https://imgur.com/gyIgzIV.jpg" width = 25% height = 25%/>
 </p>
 
 # Description 
