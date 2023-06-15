@@ -4,14 +4,18 @@
 
 </div>
 
-<p align="center">
-   <img src="https://i.imgur.com/RhksMgQ.jpg" width = 50% height = 50%/>
+<p align="left">
+   <img src="(https://i.imgur.com/RhksMgQ))" width = 25% height = 25%/>
+</p>
+
+<p align="right">
+   <img src="https://i.imgur.com/RhksMgQ.jpg" width = 25% height = 25%/>
 </p>
 
 # Description 
-Updated: 2023/06/03
+Updated: 2023/06/16
 
-Note: Code base is now functional in terms of splashscreen, statistics and initial images. 
+Note: Code base is now functional in terms of splashscreen, statistics images and metadata with text wrap! 
 Please see a to-do list for list of features still required to be completed. 
 
 -----------------------------------------------------------------------------------------------------------
@@ -158,8 +162,8 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [x] Implement game metadata within game mode
 - [x] Gracefully shutdown the OLED display when the console is powered down and restart it when console is repowered on
 - [x] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
-- [ ] Implement "retrostats" into stats mode to show user most played games by **times played** & **time duration** using the RetroStats scripts. Note : No RTC so time duration may not be accurate. 
 
 # Nice to have/probably won't implement any time soon! 
 - [ ] Write a python script to break up video into individual video frames on the Pi 4 
 - [ ] Setup tinyUSB library to try and achieve 0.9MB/s transfer speeds for all frames, for 30 FPS video over USB 1.1 (max 1.5MB/s)
+- [ ] Implement "retrostats" into stats mode to show user most played games by **times played** & **time duration** using the RetroStats scripts. Note : No RTC so time duration may not be accurate. 
