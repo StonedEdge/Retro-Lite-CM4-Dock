@@ -5,7 +5,11 @@
 </div>
 
 <p align="left">
-   <img src="(https://i.imgur.com/RhksMgQ))" width = 25% height = 25%/>
+   <img src="(https://imgur.com/WnWMyfu)" width = 25% height = 25%/>
+</p>
+
+<p align="center">
+   <img src="https://i.imgur.com/RhksMgQ.jpg" width = 25% height = 25%/>
 </p>
 
 <p align="right">
