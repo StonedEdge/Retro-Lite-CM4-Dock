@@ -164,6 +164,8 @@ Pinout to connect the OLED screen to the docking station is located above. Gerbe
 - [x] Implement game metadata within game mode
 - [x] Gracefully shutdown the OLED display when the console is powered down and restart it when console is repowered on
 - [x] Identify how to perform hardware (or software) vertical scrolling of text on the SSD1351 for game descriptions 
+- [ ] Fix some new line errors in metadata mode 
+- [ ] Figure out how to encode special characters - probably via European code pages (CP1250/1252)
 
 # Nice to have/probably won't implement any time soon! 
 - [ ] Write a python script to break up video into individual video frames on the Pi 4 
