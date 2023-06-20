@@ -22,6 +22,17 @@ import xml.etree.ElementTree as et
 from difflib import SequenceMatcher
 from PIL import Image, ImageDraw
 
+displayWidth = 128                          # Same as OLED_WIDTH
+charsPerLine = displayWidth // 7            # 18 chars per line (7 is small_font width)
+
+def center_crop(img,dim):
+	width, height = img.shape[1], img.shape[0]
+	crop_width = dim[0] if dim[0]<img.shape[1] else img.shape[1]
+	crop_height = dim[1] if dim[1]<img.shape[0] else img.shape[0]
+	start_x = (width - crop_width) // 2
+	start_y = (height - crop_height) // 2
+	return img[start_y:start_y+crop_height, start_x:start_x+crop_width]
+
 def get_img_directories():
 	global wheel, screenshot, boxart, consol
 	tempFile = open('/tmp/retropie-oled.log', 'r', -1)    # , "utf-8")
@@ -32,27 +43,58 @@ def get_img_directories():
 	boxart = retropie_oled_img_dir[2].rstrip('\n')
 	consol = retropie_oled_img_dir[3].rstrip('\n')
 
-def pico_com_port():
-    global pico_ports
-    picoVID = "2E8A" # Pico USB Vendor ID
-    picoPID = "000A" # Pico USB product ID
-    port_list = serial.tools.list_ports.comports()
 
-    pico_ports = []
-    for device in port_list:
-        if (device.vid != None or device.pid != None):
-            if ('{:04X}'.format(device.vid) == picoVID and
-                '{:04X}'.format(device.pid) == picoPID):
-                pico_ports.append(device.device)
+# Returns game meta data as a blob of lines.
+#
+# @param text               [in] Block of text to split.
+#
+# @param maxChars           [in] Maximum characters per line.
+#
+# @return An array of word-wrapped lines.
 
-    if len(pico_ports) == 0:
-        print("Raspberry Pi Pico not found. Please check VID and PID IDs are correct.")
-    elif len(pico_ports) == 1:
-        print("1 Pico device found at port: ", pico_ports[0])
-    else:
-        print(len(pico_ports), "Pico devices found at ports: ", pico_ports)
+def word_wrap_text(text, maxChars):
+    words = text.split()  # Split the text into individual words
+    lines = []
+    currentLine = ""
 
-    return pico_ports
+    wordIndex = 0
+    for word in words:
+        # Calculate the width of the current line if the word is added
+
+        wordLen = len(word)
+        currentLineLen = len(currentLine)
+
+        while wordLen > 0:
+            if wordLen >= maxChars:  # Extreme case:  Word is wider than output area.
+                # Save current line if any, and put what will fit of the current word on its own line.
+
+                if currentLineLen > 0:
+                    lines.append(currentLine)
+                lines.append(word[0:maxChars])  # This new line is full already.
+
+                word = word[maxChars:]      # Keep splitting the remainder of this word
+                wordLen = len(word)
+                currentLineLen = 0
+                currentLine = ""
+            else:
+                freeChars = maxChars - currentLineLen
+                if currentLineLen != 0:
+                    freeChars -= 1          # We'll also need a space before the word
+
+                if wordLen <= freeChars:    # Word WILL fit on current line
+                    if currentLineLen != 0:
+                        currentLine += " "
+                    currentLine += word
+                else:                       # Word won't fit, start new line
+                    if currentLineLen > 0:
+                        lines.append(currentLine)
+                    currentLine = word      # This word starts on a new line.
+                wordLen = 0                 # Clear to get out of while loop
+
+    if currentLine != "":  # Add the last line if there are remaining words
+        lines.append(currentLine)
+
+    return lines
 
 # Returns game meta data as a blob of lines.
 
@@ -65,21 +107,15 @@ def get_game_metadata():
     gamelist_path = os.path.join('/opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml')
     data = et.parse(gamelist_path)
 
-    print("Debug Information:")
-    print("------------------")
-    print("Game Name:", game_name)
-    print("System Name:", system_name)
-    print("Game List Path:", gamelist_path)
-
     gameMetadata = ''
+    gameMetadataDesc = ''
     
-    gameMetadata += 'Game Name: ' + game_name + '\n'
-    gameMetadata += 'System Name: ' + system_name + '\n'
+    gameMetadata += 'Game Name: ' + '\n' + game_name + '\n'
+    gameMetadata += 'System Name: ' + '\n' + system_name + '\n'
 
     game_list = data.findall(u".//game[name='{0}']".format(saxutils.escape(game_name)))
 
     desc = 'No description found'
-    rating = 'No rating found'
     release_date = 'No release date found'
     developer = 'No developer found'
     publisher = 'No publisher found'
@@ -101,50 +137,41 @@ def get_game_metadata():
         # Extract the desired information from the best matching game element
         if best_match_game.find('desc') is not None:
             temp = str(best_match_game.find('desc').text)
-            desc = str('Description is:\n' + temp)
-            gameMetadata += 'Description: ' + temp + '\n'
+            desc = str(temp)
+            gameMetadataDesc += desc + '\n'
         else:
             desc = 'N/A'
         print(desc)
 
-        if best_match_game.find('lastplayed') is not None:
-            # TODO: THIS IS A NUMBER, NOT A DATE IN TEXT FORMAT
-            temp = str(best_match_game.find('lastplayed').text)
-            lastplayed = str('Last Played:\n' + temp)
-            gameMetadata += 'Last Played: ' + temp + '\n'
-        else:
-            lastplayed = 'N/A'
-        print(lastplayed)
-
         if best_match_game.find('releasedate') is not None:
-            # TODO: THIS IS A NUMBER, NOT A DATE IN TEXT FORMAT
             temp = str(best_match_game.find('releasedate').text)
-            release_date = str('Release Date:\n' + temp)
-            gameMetadata += 'Released: ' + temp + '\n'
+            if len(temp) >= 8:  # Split out Year-Month-Day from ISO data.
+                temp = temp[0:4] + '-' + temp[4:6] + '-' + temp[6:8]
+            release_date = str(temp)
+            gameMetadata += 'Released:\n' + temp + '\n'
         else:
             release_date = 'N/A'
         print(release_date)
 
         if best_match_game.find('developer') is not None:
             temp = str(best_match_game.find('developer').text)
-            developer = str('Developer:\n' + temp)
-            gameMetadata += 'Developer: ' + temp + '\n'
+            developer = str(temp)
+            gameMetadata += 'Developer:\n' + temp + '\n'
         else:
             developer = 'N/A'
         print(developer)
 
         if best_match_game.find('publisher') is not None:
             temp = str(best_match_game.find('publisher').text)
-            publisher = str('Publisher:\n' + temp)
-            gameMetadata += 'Publisher: ' + temp + '\n'
-        else:
+            publisher = str(temp)
+            gameMetadata += 'Publisher:\n' + temp + '\n'
             publisher = 'N/A'
         print(publisher)
 
         if best_match_game.find('genre') is not None:
             temp = str(best_match_game.find('genre').text)
-            genre = str('Genre:\n' + temp)
-            gameMetadata += 'Genre: ' + temp + '\n'
+            genre = str(temp)
+            gameMetadata += 'Genre:\n' + temp + '\n'
         else:
             genre = 'N/A'
         print(genre)
@@ -152,18 +179,7 @@ def get_game_metadata():
     else: 
         print("No close match found for game_name in the XML tree! RIP.")
 
-    print("Game Metadata:")
-    print(gameMetadata)
-
-    return gameMetadata
-
-def center_crop(img,dim):
-	width, height = img.shape[1], img.shape[0]
-	crop_width = dim[0] if dim[0]<img.shape[1] else img.shape[1]
-	crop_height = dim[1] if dim[1]<img.shape[0] else img.shape[0]
-	start_x = (width - crop_width) // 2
-	start_y = (height - crop_height) // 2
-	return img[start_y:start_y+crop_height, start_x:start_x+crop_width]
+    return gameMetadata, gameMetadataDesc
 
 GAME_START_FILE = '/dev/shm/runcommand.info'
 
@@ -349,6 +365,28 @@ def get_consol_image():
                 rgb = 0
 
     binoutfile.close()
+
+def pico_com_port():
+    global pico_ports
+    picoVID = "2E8A" # Pico USB Vendor ID
+    picoPID = "000A" # Pico USB product ID
+    port_list = serial.tools.list_ports.comports()
+
+    pico_ports = []
+    for device in port_list:
+        if (device.vid != None or device.pid != None):
+            if ('{:04X}'.format(device.vid) == picoVID and
+                '{:04X}'.format(device.pid) == picoPID):
+                pico_ports.append(device.device)
+
+    if len(pico_ports) == 0:
+        print("Raspberry Pi Pico not found. Please check VID and PID IDs are correct.")
+    elif len(pico_ports) == 1:
+        print("1 Pico device found at port: ", pico_ports[0])
+    else:
+        print(len(pico_ports), "Pico devices found at ports: ", pico_ports)
+
+    return pico_ports
     
 # Define the path to the lock file
 LOCK_FILE = "/tmp/lock_file"
@@ -402,13 +440,27 @@ while True:
  
         # Send Game Metadata
         #
-        # Data is: length,text_lines
+        # Data is: length,text_lines. There are two parts, the basic metadata and the game description,
+        # which we split up for the convenience of the Pico code.
 
-        data = get_game_metadata()
-        # print(b"Send to Pico: " + str(len(data)).encode('utf-8') + b',')
-        ser.write(str(len(data)).encode('utf-8') + b',')
-        # print(b"Send to Pico: " + data.encode('utf-8'))
-        ser.write(data.encode('utf-8'))
+        data, desc = get_game_metadata()
+
+        # Wrap the text for data
+        wrapped_data = word_wrap_text(data, charsPerLine)
+        wrapped_data = '\n'.join(wrapped_data) + '\n'
+
+        # Send the serialized_data for data to Pico
+        ser.write(str(len(wrapped_data)).encode('cp1252') + b',')
+        ser.write(wrapped_data.encode('cp1252'))
+
+        # Wrap the text for desc
+        wrapped_data = word_wrap_text(desc, charsPerLine)
+        wrapped_data = '\n'.join(wrapped_data) + '\n'
+
+        # Send the serialized_desc to Pico
+        ser.write(str(len(wrapped_data)).encode('cp1252') + b',')
+        ser.write(wrapped_data.encode('cp1252'))
+
         print("Metadata sent to Pico on port", port)
 
         fcntl.flock(lock_file, fcntl.LOCK_UN)
