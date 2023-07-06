@@ -6,6 +6,5 @@ find /opt/retropie/configs/all/emulationstation/downloaded_images -type d | whil
   find "$dir" -maxdepth 1 -type f -name "*.jpg" -print0 | while read -d $'\0' file; do
     echo "Converting $file to PNG..."
     convert "$file" "${file%.jpg}.png"
-    rm "$file" # remove original .jpg file
   done
 done
