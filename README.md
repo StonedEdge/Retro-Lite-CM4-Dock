@@ -15,10 +15,10 @@
 </p>
 
 # Description 
-Updated: 2023/06/16
+Updated: 2023/07/09
 
 Note: Code base is now functional in terms of splashscreen, statistics images and metadata with text wrap! 
-Please see a to-do list for list of features still required to be completed. 
+I'm considering this project completed at this stage. Feel free to make improvements to it and use it in any way you'd like! 
 
 -----------------------------------------------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ The Retro Lite CM4 docking station/hub is designed to be used with the Retro Lit
 The main goal of this project is to act as a metadata box for your RetroPie system & learn more about the games you are playing in real time - the aim is to preserve a small part of retro gaming history through this project. The project boasts the following features:
 
 - Fully integrated 1.5" 128x128 SPI driven 16-bit color display 
-- 3 modes, including **splashscreen**, **stats** and **game** mode
+- 3 modes, including **splashscreen**, **stats** and **game** mode. Navigation is done using a push button connected to a GPIO pin
 - 3 x external USB 2.0 ports to use for keyboard, mouse & other peripherals in desktop mode. USB controller compatible for low latency
 - USB-C charging 
 - HDMI video output 
