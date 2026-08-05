@@ -46,54 +46,62 @@ def get_img_directories():
 
 # Returns game meta data as a blob of lines.
 #
-# @param text               [in] Block of text to split.
+# @param text               [in] Text to split.
+# 
+#                           A paragraph here refers to text terminated by
+#                           a hard newline (metadata looks like this).
 #
-# @param maxChars           [in] Maximum characters per line.
+# @param maxChars           [in] Maximum characters per display line.
 #
 # @return An array of word-wrapped lines.
 
 def word_wrap_text(text, maxChars):
-    words = text.split()  # Split the text into individual words
-    lines = []
-    currentLine = ""
+    lines = []                  # Formatted (wrapped) output lines.
+    paragraphs = text.split('\n')
 
-    wordIndex = 0
-    for word in words:
-        # Calculate the width of the current line if the word is added
+    for p in paragraphs:
+        words = p.split()  # Split the text into individual words
+        currentLine = ""
 
-        wordLen = len(word)
-        currentLineLen = len(currentLine)
+        if len(words) == 0:             # We had newline only, so no words.  Add empty
+            lines.append("")            # line for vertical spacing.
+        else:
+            for word in words:
+                # Calculate the width of the current line if the word is added
 
-        while wordLen > 0:
-            if wordLen >= maxChars:  # Extreme case:  Word is wider than output area.
-                # Save current line if any, and put what will fit of the current word on its own line.
-
-                if currentLineLen > 0:
-                    lines.append(currentLine)
-                lines.append(word[0:maxChars])  # This new line is full already.
-
-                word = word[maxChars:]      # Keep splitting the remainder of this word
                 wordLen = len(word)
-                currentLineLen = 0
-                currentLine = ""
-            else:
-                freeChars = maxChars - currentLineLen
-                if currentLineLen != 0:
-                    freeChars -= 1          # We'll also need a space before the word
+                currentLineLen = len(currentLine)
 
-                if wordLen <= freeChars:    # Word WILL fit on current line
-                    if currentLineLen != 0:
-                        currentLine += " "
-                    currentLine += word
-                else:                       # Word won't fit, start new line
-                    if currentLineLen > 0:
-                        lines.append(currentLine)
-                    currentLine = word      # This word starts on a new line.
-                wordLen = 0                 # Clear to get out of while loop
+                while wordLen > 0:
+                    if wordLen >= maxChars:  # Extreme case:  Word is wider than output area.
+                        # Save current line if any, and put what will fit of the current word on its own line.
 
-    if currentLine != "":  # Add the last line if there are remaining words
-        lines.append(currentLine)
+                        if currentLineLen > 0:
+                            lines.append(currentLine)
+                        lines.append(word[0:maxChars])  # This new line is full already.
 
+                        word = word[maxChars:]      # Keep splitting the remainder of this word
+                        wordLen = len(word)
+                        currentLineLen = 0
+                        currentLine = ""
+                    else:
+                        freeChars = maxChars - currentLineLen
+                        if currentLineLen != 0:
+                            freeChars -= 1          # We'll also need a space before the word
+
+                        if wordLen <= freeChars:    # Word WILL fit on current line
+                            if currentLineLen != 0:
+                                currentLine += " "
+                            currentLine += word
+                        else:                       # Word won't fit, start new line
+                            if currentLineLen > 0:
+                                lines.append(currentLine)
+                            currentLine = word      # This word starts on a new line.
+                        wordLen = 0                 # Clear to get out of while loop
+
+            if currentLine:                 # Add the last line if there are remaining words
+                lines.append(currentLine)
+    
     return lines
 
 # Returns game meta data as a blob of lines.
@@ -104,14 +112,14 @@ def get_game_metadata():
     tempFile.close()
     game_name = gameMetadata[0].split('/')[-1].rsplit('.', 1)[0].split('(')[0].rstrip()  # Get the current game name
     system_name = gameMetadata[0].split('/')[5]  # Get the current system name
-    gamelist_path = os.path.join('/opt/retropie/configs/all/emulationstation/gamelists', system_name, 'gamelist.xml')
+    gamelist_path = os.path.join('/home/pi/RetroPie/roms', system_name, 'gamelist.xml')    
     data = et.parse(gamelist_path)
 
     gameMetadata = ''
     gameMetadataDesc = ''
     
-    gameMetadata += 'Game Name: ' + '\n' + game_name + '\n'
-    gameMetadata += 'System Name: ' + '\n' + system_name + '\n'
+    gameMetadata += 'Game Name:\n' + game_name + '\n'
+    gameMetadata += 'System Name:\n' + system_name + '\n'
 
     game_list = data.findall(u".//game[name='{0}']".format(saxutils.escape(game_name)))
 
@@ -314,7 +322,7 @@ def get_consol_image():
     consol_images = [f for f in os.listdir(consol_dir) if os.path.isfile(os.path.join(consol_dir, f)) and f.endswith('.png')]
 
     if not consol_images:
-        print(f"Consol directory: {consol_dir}")
+        print("Consol directory: {consol_dir}")
         sys.exit(0)
 
     consol_image_file = random.choice(consol_images)
@@ -440,7 +448,7 @@ while True:
  
         # Send Game Metadata
         #
-        # Data is: length,text_lines. There are two parts, the basic metadata and the game description,
+        # Data is sent as: length,text_lines. There are two parts, the basic metadata and the game description,
         # which we split up for the convenience of the Pico code.
 
         data, desc = get_game_metadata()
@@ -460,6 +468,7 @@ while True:
         # Send the serialized_desc to Pico
         ser.write(str(len(wrapped_data)).encode('cp1252') + b',')
         ser.write(wrapped_data.encode('cp1252'))
+        print(wrapped_data)
 
         print("Metadata sent to Pico on port", port)
 
